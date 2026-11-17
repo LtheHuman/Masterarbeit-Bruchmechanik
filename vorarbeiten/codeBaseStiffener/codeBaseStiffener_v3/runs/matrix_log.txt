@@ -1,0 +1,59 @@
+==== ref ====
+  175 : cout << "DONE " << name << " : compliance " << yy[0] << " -> " << yy[maxIterations-1] << endl;
+DONE ref : compliance 27.3988847509 -> 26.1092663680
+==== bcClamped ====
+  175 : cout << "DONE " << name << " : compliance " << yy[0] << " -> " << yy[maxIterations-1] << endl;
+DONE bcClamped : compliance 26.1065906279 -> 26.1065823609
+==== bcHinged ====
+  175 : cout << "DONE " << name << " : compliance " << yy[0] << " -> " << yy[maxIterations-1] << endl;
+DONE bcHinged : compliance 94.2384068835 -> 93.9405010959
+==== bcOneway ====
+  175 : cout << "DONE " << name << " : compliance " << yy[0] << " -> " << yy[maxIterations-1] << endl;
+==== n1 ====
+  175 : cout << "DONE " << name << " : compliance " << yy[0] << " -> " << yy[maxIterations-1] << endl;
+DONE n1 : compliance 35.7680448583 -> 35.7680412527
+==== n3 ====
+  175 : cout << "DONE " << name << " : compliance " << yy[0] << " -> " << yy[maxIterations-1] << endl;
+DONE n3 : compliance 17.5865269205 -> 17.5855835110
+==== n2h1 ====
+  175 : cout << "DONE " << name << " : compliance " << yy[0] << " -> " << yy[maxIterations-1] << endl;
+DONE n2h1 : compliance 9.6330672728 -> 20.8783636635
+==== ALL DONE ====
+---- runs/ref_pos.txt ----
+name ref
+nV 2
+nH 0
+EI 100.0000000000
+bc 0 0 0 0
+startXinit 0.0000000000 8.0000000000 18.0000000000 40.0000000000
+startYinit 0.0000000000 10.0000000000
+startX 0.0000000000 13.0250958535 26.2614518867 40.0000000000
+startY 0.0000000000 10.0000000000
+complianceInit  27.3988847509
+complianceFinal 26.1092663680
+---- runs/bcClamped_pos.txt ----
+name bcClamped
+nV 2
+nH 0
+EI 100.0000000000
+bc 0 0 0 0
+startXinit 0.0000000000 13.3333333333 26.6666666667 40.0000000000
+startYinit 0.0000000000 10.0000000000
+startX 0.0000000000 13.3456066668 26.6538627523 40.0000000000
+startY 0.0000000000 10.0000000000
+complianceInit  26.1065906279
+complianceFinal 26.1065823609
+---- runs/bcHinged_pos.txt ----
+name bcHinged
+nV 2
+nH 0
+EI 100.0000000000
+bc 1 1 1 1
+startXinit 0.0000000000 13.3333333333 26.6666666667 40.0000000000
+startYinit 0.0000000000 10.0000000000
+startX 0.0000000000 12.9510985736 27.0488255510 40.0000000000
+startY 0.0000000000 10.0000000000
+complianceInit  94.2384068835
+complianceFinal 93.9405010959
+---- runs/bcOneway_pos.txt ----
+cat: runs/bcOneway_pos.txt: No such file or directory

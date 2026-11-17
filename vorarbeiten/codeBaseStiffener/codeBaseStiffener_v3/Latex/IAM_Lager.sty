@@ -1,0 +1,792 @@
+% IAM_Lager.sty
+%
+% vorhandene Lagertypen:
+%    \Festlager{shift}[rotate][scale][isFullHinge]
+%    \Loslager{shift}[rotate][scale][isFullHinge]
+%    \Einspannung{shift}[rotate][scale]
+%    \Parallelfuehrung{shift}[rotate][scale]
+%    \Schiebehuelse{shift}[rotate][scale]
+
+
+%    \Vollgelenk{shift}[scale]  
+%    \Halbgelenk{shift}[rotate][scale]
+
+%    \Wegfeder{shift}[rotate][scale][LagerType][springlength] 
+%    \Drehfeder{shift}[rotate][scale][LagerType][yAxisReflect] 
+%
+%    \Schnittufer{shift}[rotate][scale]
+%    \Schnittgroessen{shift}[pos][orientation][rotate][scale] 
+%    \Koordinatensystem{shift}[scale][orientation][xlength][ylength] 
+%                      [xlabel][ylabel][xlabelpos][ylabelpos]
+%    \Bemassung{point1}{point2}{label}[offset][orientation][labelpos]
+%
+%    \Belastung{xPos}{yPos}{magnitude}[arrows][hh] 
+%
+%    \Untergrund{start}[length][orientation][thickness]
+
+
+%% TODO:
+% check scaling of linewidth
+% Dichte in der Schraffur
+% Gelenkanschluss ? mit biegesteifem Eck ?
+% 3D ? Pendelsäbe, Volleinspannung, Pyramide, Gablelager?
+
+%
+%================================================
+%		use Package
+%================================================
+%
+%
+\RequirePackage{tikz}
+\RequirePackage{xargs}
+\RequirePackage{ifthen}
+
+\usetikzlibrary{math} %needed tikz library
+\usetikzlibrary{calc}
+\usetikzlibrary{snakes}
+
+%================================================
+% Lagertypen - 3D
+%================================================
+
+%%% \SpaceEinspannung{shift}[scale][rotate x][rotate y][rotate z]
+%%%     [scale][rotate x][rotate y][rotate z] are optional
+\newcommandx{\SpaceEinspannung}[5][2=1.,3=0.,4=0.,5=0.]{%
+	\tdplotsetrotatedcoords{#3}{#4}{#5};
+  \begin{scope}[shift={(#1)},scale=#2, tdplot_rotated_coords]
+          \def\sz{.25}
+    	  \coordinate (O) at (0,0,0); 
+      	  \coordinate (p0) at (\sz,\sz,0); 
+    	  \coordinate (p1) at (\sz,-\sz,0); 
+    	  \coordinate (p2) at (-\sz,-\sz,0);
+    	  \coordinate (p3) at (-\sz,\sz,0); 
+        \fill[color=black!10!white] (p0) -- ++(0,0,-\sz *.5) -- ++(0,-\sz *2,0) -- ++(0,0,\sz *.5) -- cycle;
+	\fill[color=black!10!white] (p1) -- ++(-\sz *2,0,0) -- ++(0,0,-\sz *.5) -- ++(\sz *2,0,0) -- cycle;
+	\fill[color=black!10!white] (p2) -- ++(0,\sz *2,0) -- ++(0,0,-\sz *.5) -- ++(0,-\sz *2,0) -- cycle;
+	\fill[color=black!10!white] (p3) -- ++(\sz *2,0,0) -- ++(0,0,-\sz *.5) -- ++(-\sz *2,0,0) -- cycle;  	    
+        \draw[fill=black!10!white] (p0) 
+      -- (p1) -- (p2) -- (p3) -- cycle;
+  \end{scope}
+ }
+ %%% \SpaceParallelfuehrung{shift}[scale][rotate x][rotate y][rotate z]
+%%%     [scale][rotate x][rotate y][rotate z] are optional
+\newcommandx{\SpaceParallelfuehrung}[5][2=1.,3=0.,4=0.,5=0.]{%
+	\tdplotsetrotatedcoords{#3}{#4}{#5};
+  \begin{scope}[shift={(#1)},scale=#2, tdplot_rotated_coords]
+          \def\sz{.25}
+    	  \coordinate (O) at (0,0,0); 
+      	  \coordinate (p0) at (\sz,\sz,0); 
+    	  \coordinate (p1) at (\sz,-\sz,0); 
+    	  \coordinate (p2) at (-\sz,-\sz,0);
+    	  \coordinate (p3) at (-\sz,\sz,0);
+    	  \coordinate (P0) at (\sz,\sz,-\sz *\sz); 
+    	  \coordinate (P1) at (\sz,-\sz,-\sz *\sz); 
+    	  \coordinate (P2) at (-\sz,-\sz,-\sz *\sz);
+    	  \coordinate (P3) at (-\sz,\sz,-\sz *\sz);
+        \fill[color=black!10!white] (P0) -- ++(0,0,-\sz *.5) -- ++(0,-\sz *2,0) -- ++(0,0,\sz *.5) -- cycle;
+	\fill[color=black!10!white] (P1) -- ++(-\sz *2,0,0) -- ++(0,0,-\sz *.5) -- ++(\sz *2,0,0) -- cycle;
+	\fill[color=black!10!white] (P2) -- ++(0,\sz *2,0) -- ++(0,0,-\sz *.5) -- ++(0,-\sz *2,0) -- cycle;
+	\fill[color=black!10!white] (P3) -- ++(\sz *2,0,0) -- ++(0,0,-\sz *.5) -- ++(-\sz *2,0,0) -- cycle;  	            
+      \draw[fill=black!10!white] (P0) 
+      -- (P1) -- (P2) -- (P3) -- cycle;
+      \draw[fill=black!10!white] (p0) 
+      -- (p1) -- (p2) -- (p3) -- cycle;
+  \end{scope}
+ }
+ 
+%%% \SpaceFestlager{shift}[scale][rotate x][rotate y][rotate z]
+%%%     [scale][rotate x][rotate y][rotate z] are optional
+\newcommandx{\SpaceFestlager}[5][2=1.,3=0.,4=0.,5=0.]{%
+\tdplotsetrotatedcoords{#3}{#4}{#5};       
+  \begin{scope}[shift={(#1)},scale=#2,tdplot_rotated_coords]  
+  \coordinate (O) at (0,0,0);
+     \def\sz{.25}
+      \coordinate (p0) at (\sz,-\sz,-\sz); 
+      \coordinate (p1) at (\sz,-\sz,\sz); 
+      \coordinate (p2) at (-\sz,-\sz,-\sz);
+      \coordinate (p3) at (-\sz,-\sz,\sz); 
+      % draw support of hinge D_z   
+	\fill[color=black!10!white] (p0) -- ++(0,0,\sz *2) -- ++(0,-\sz *.5,0) -- ++(0,0,-\sz *2) -- cycle;
+	\fill[color=black!10!white] (p3) -- ++(\sz *2,0,0) -- ++(0,-\sz *.5,0) -- ++(-\sz *2,0,0) -- cycle;
+	\fill[color=black!10!white] (p2) -- ++(0,0,\sz *2) -- ++(0,-\sz *.5,0) -- ++(0,0,-\sz *2) -- cycle;
+	\fill[color=black!10!white] (p0) -- ++(-\sz *2,0,0) -- ++(0,-\sz *.5,0) -- ++(\sz *2,0,0) -- cycle;
+      \draw[fill=black!10!white] (p0)--(p1)--(p3)--(p2)--cycle;
+      \draw (p1)--(O)--(p0);
+      \draw (p3)--(O)--(p2);    
+  \end{scope}
+  \begin{scope}[shift={(#1)},scale=#2] 
+  \draw[fill=white] (0,0,0)circle(2pt);
+  \end{scope}
+ }
+ 
+ %%% \SpaceLoslager{shift}[scale][rotate x][rotate y][rotate z]
+ %%% [scale][rotate x][rotate y][rotate z] are optional
+ \newcommandx{\SpaceLoslager}[6][2=1.,3=0.,4=0.,5=0.,6=0]{%
+   \tdplotsetrotatedcoords{#3}{#4}{#5};       
+   \begin{scope}[shift={(#1)},scale=#2,tdplot_rotated_coords]  
+     \coordinate (O) at (0,0,0);
+     \def\sz{.25}
+     \def\sx{1.5}
+     \coordinate (p0) at (\sz,-\sz,-\sz); 
+     \coordinate (p1) at (\sz,-\sz,\sz); 
+     \coordinate (p2) at (-\sz,-\sz,-\sz);
+     \coordinate (p3) at (-\sz,-\sz,\sz); 
+     \coordinate (P0) at (\sx*\sz,-\sz -\sz *\sz,-\sz); 
+     \coordinate (P1) at (\sx*\sz,-\sz -\sz *\sz,\sz); 
+     \coordinate (P2) at (-\sx*\sz,-\sz -\sz *\sz,-\sz);
+     \coordinate (P3) at (-\sx*\sz,-\sz -\sz *\sz,\sz);
+     
+     % fix one other direction
+     \ifthenelse{\equal{#6}{1}}
+     {
+       \coordinate (P4) at (-\sx*\sz,-\sz  *.6,\sz);
+       \coordinate (P5) at (\sx*\sz,-\sz * .6,\sz);
+       \coordinate (P6) at (\sx*\sz,-\sz  *.6,-\sz);
+       \coordinate (P7) at (-\sx*\sz,-\sz * .6,-\sz); 
+       \draw[fill=black!10!white] (P0)--(P6)--(P7)--(P2)--cycle;
+     }
+     {}
+     % draw support of hinge D_z   
+     \fill[color=black!10!white] (P0) -- ++(0,0,\sz *2) -- ++(0,-\sz *.5,0) -- ++(0,0,-\sz *2) -- cycle;
+     \fill[color=black!10!white] (P3) -- ++(\sx*\sz *2,0,0) -- ++(0,-\sz *.5,0) -- ++(-\sx*\sz *2,0,0) -- cycle;
+     \fill[color=black!10!white] (P2) -- ++(0,0,\sz *2) -- ++(0,-\sz *.5,0) -- ++(0,0,-\sz *2) -- cycle;
+     \fill[color=black!10!white] (P0) -- ++(-\sx*\sz *2,0,0) -- ++(0,-\sz *.5,0) -- ++(\sx*\sz *2,0,0) -- cycle;
+     \draw[fill=black!10!white] (P0)--(P1)--(P3)--(P2)--cycle;
+     \draw[fill=black!10!white] (p0)--(p1)--(p3)--(p2)--cycle;
+     \draw (p1)--(O)--(p0);
+     \draw (p3)--(O)--(p2);
+     
+     %% 
+     % fix one other direction
+     \ifthenelse{\equal{#6}{1}}
+     {
+       \draw[fill=black!10!white] (P3)--(P4)--(P5)--(P1)--cycle;
+     }
+     {}
+   \end{scope}
+   \begin{scope}[shift={(#1)},scale=#2] 
+     \draw[fill=white] (0,0,0)circle(2pt);
+   \end{scope}
+ }
+ 
+%%% \SpaceWegfeder{shift}[scale][rotate x][rotate y][rotate z][spring length]
+%%%     [scale][rotate x][rotate y][rotate z][spring length] are optional
+%%%     LagerType=0 feste Einspannung
+%%%         else other LagerType still have to be added 
+\newcommandx{\SpaceWegfeder}[6][2=1.,3=0.,4=0.,5=0.,6=1.]{%
+\tdplotsetrotatedcoords{#3}{#4}{#5};  
+  \def\springlength{#6}
+  \def\baline{.25*\springlength}
+  \begin{scope}[shift={(#1)},scale=#2,tdplot_rotated_coords] 
+    \SpaceParallelfuehrung{#1}[#2][#3-180][#4-90][#5];
+    \draw(0,0,0)--(\baline,0,0);
+    \draw[decoration={aspect=0.3, segment length=6, amplitude=5pt,coil},decorate] (\baline,0.,0) -- (\baline+\springlength,0.,0); 
+    \draw(\baline+\springlength,0,0)--(2*\baline+\springlength,0,0);
+    \draw[fill=white](2*\baline+\springlength,0,0)circle(2pt);
+  \end{scope}
+}
+
+%%% \SpaceBemassung{point1}{point2}{label}[scale][labelpos] 
+%%%     [scale][labelpos]   are optional
+% orientation = 0 ... go directly along the line from point1 to point2
+% orientation = 1 ... go horizontally (direction 1) from point1 to point2
+% orientation = 2 ... go vertically   (direction 2) from point1 to point2
+
+\newcommandx{\SpaceBemassung}[5][4=1.,5={pos=.5, above}]{
+  %
+  \draw (#1)--(#2)node[#5]{#3};
+  \begin{scope}[shift={(#1)}]
+	\draw (-#4,0,0)--(#4,0,0);
+	\draw (0,-#4,0)--(0,#4,0);
+	\draw (0,0,-#4)--(0,0,#4);
+  \end{scope}
+  \begin{scope}[shift={(#2)}]
+	\draw (-#4,0,0)--(#4,0,0);
+	\draw (0,-#4,0)--(0,#4,0);
+	\draw (0,0,-#4)--(0,0,#4);
+  \end{scope}
+}
+
+%================================================
+% Lagertypen - 2D
+%================================================
+
+%%% \Festlager{shift}[rotate][scale][isFullHinge]
+%%%     [rotate][scale][isFullHinge] are optional
+%%%     isFullHinge=1 true is default value
+%%%     isFullHinge=0 false means (Halbgelenk)
+\newcommandx{\Festlager}[4][2=0,3=1.,4=1]{%
+  \begin{scope}[shift={(#1)},rotate=#2,scale=#3]   
+    \draw[thick] (0,0) -- (-0.25,-0.4) -- (0.25,-0.4) -- (0,0);
+    % draw hinge
+    \ifthenelse{\equal{#4}{0}}%
+    % false: draw semi circle
+    {\Halbgelenk{(0,0)}}%
+    % true: draw full circle
+    {\Vollgelenk{(0,0)}}
+    % draw separator
+    \draw[thick] (-0.36,-0.4) -- +(0.72,0.);
+    % draw lines at footing
+    \def\step{0.1}
+    \def\stepp{0.4}
+    % draw lines domain 1 (upper left corner)
+    \foreach \x in {0.,\step,...,.3}{
+      \draw[thin] (-.35+\x,-.4) -- (-.35,-.4-\x);}
+    % draw lines domain 2 (center)
+    \foreach \x in {.3,\stepp,...,.69}{
+      \draw[thin] (-.35+\x,-.4) -- (-.65+\x,-.7);}
+    % draw lines domain 3 (lower right corner)
+    \foreach \y in {0.,\step,...,.3}{
+      \draw[thin] (.35,-.4-\y) -- (.05+\y,-.7);}   
+  \end{scope}
+}
+
+%%% \Loslager{shift}[rotate][scale][isFullHinge]
+%%%     [rotate][scale][isFullHinge] are optional
+%%%     isFullHinge=1 true is default value
+%%%     isFullHinge=0 false means (Halbgelenk)
+\newcommandx{\Loslager}[4][2=0,3=1.,4=1]{
+  \begin{scope}[shift={(#1)},rotate=#2,scale=#3] 
+    \draw[thick] (0,0) -- (-0.25,-0.4) -- (0.25,-0.4) -- (0,0);
+    % draw hinge
+    \ifthenelse{\equal{#4}{0}}%
+    % false: draw semi circle
+    {\Halbgelenk{(0.,0.)}}%
+    % true: draw full circle
+    {\Vollgelenk{(0.,0.)}}
+    % draw separators
+    \draw[thick] (-0.36,-0.4) -- +(0.72,0.);
+    \draw[thick] (-0.36,-0.5) -- +(0.72,0.);
+    % draw lines at footing
+    \def\step{0.1}
+    \def\stepp{0.4}
+    % draw lines domain 1 (upper left corner)
+    \foreach \x in {0.,\step,...,.3}{
+      \draw[thin] (-.35+\x,-.5) -- (-.35,-.5-\x);}
+    % draw lines domain 2 (center)
+    \foreach \x in {.3,\stepp,...,.69}{
+      \draw[thin] (-.35+\x,-.5) -- (-.65+\x,-.8);}
+    % draw lines domain 3 (lower right corner)
+    \foreach \y in {0.,\step,...,.3}{
+      \draw[thin] (.35,-.5-\y) -- (.05+\y,-.8);}         
+  \end{scope}
+}
+
+%%% \Einspannung{shift}[rotate][scale]
+%%%     [rotate][scale] are optional
+\newcommandx{\Einspannung}[3][2=0,3=1.]{
+  \begin{scope}[shift={(#1)},rotate=#2,scale=#3]
+    % draw separators
+    \draw[thick] (-0.36,-0.0) -- +(0.72,0.);
+    % draw lines at footing
+    \def\step{0.1}
+    \def\stepp{0.4}
+    % draw lines domain 1 (upper left corner)
+    \foreach \x in {0.,\step,...,.3}{
+      \draw[thin] (-.35+\x,-.0) -- (-.35,-.0-\x);}
+    % draw lines domain 2 (center)
+    \foreach \x in {.3,\stepp,...,.69}{
+      \draw[thin] (-.35+\x,-.0) -- (-.65+\x,-.3);}
+    % draw lines domain 3 (lower right corner)
+    \foreach \y in {0.,\step,...,.3}{
+      \draw[thin] (.35,-.0-\y) -- (.05+\y,-.3);}         
+  \end{scope}
+}
+
+%%% \Parallelfuehrung{shift}[rotate][scale]
+%%%     [rotate][scale] are optional
+\newcommandx{\Parallelfuehrung}[3][2=0,3=1.]{
+  \begin{scope}[shift={(#1)},rotate=#2,scale=#3]
+    % draw separators
+    \draw[thick] (-0.36,-0.0) -- +(0.72,0.);
+    \draw[thick] (-0.36,-0.1) -- +(0.72,0.);
+    % draw lines at footing
+    \def\step{0.1}
+    \def\stepp{0.4}
+    % draw lines domain 1 (upper left corner)
+    \foreach \x in {0.,\step,...,.3}{
+      \draw[thin] (-.35+\x,-.1) -- (-.35,-.1-\x);}
+    % draw lines domain 2 (center)
+    \foreach \x in {.3,\stepp,...,.69}{
+      \draw[thin] (-.35+\x,-.1) -- (-.65+\x,-.4);}
+    % draw lines domain 3 (lower right corner)
+    \foreach \y in {0.,\step,...,.3}{
+      \draw[thin] (.35,-.1-\y) -- (.05+\y,-.4);}         
+  \end{scope}
+}
+
+
+%%% \Schiebehuelse{shift}[rotate][scale]
+%%% [rotate][scale] are optional
+\newcommandx{\Schiebehuelse}[3][2=0,3=1.]{
+  \begin{scope}[shift={(#1)},rotate=#2,scale=#3]
+    % draw separators
+    \draw[thick] (-0.36,0.1) -- +(0.72,0.);
+    \draw[thick] (-0.36,-0.1) -- +(0.72,0.);
+    % draw lines at footing
+    \def\step{0.1}
+    \def\stepp{0.4}
+    % draw lines domain 1 (lower footing upper left corner)
+    \foreach \x in {0.,\step,...,.3}{
+      \draw[thin] (-.35+\x,-.1) -- (-.35,-.1-\x);}
+    % draw lines domain 2 (lower footing center)
+    \foreach \x in {.3,\stepp,...,.69}{
+      \draw[thin] (-.35+\x,-.1) -- (-.65+\x,-.4);}
+    % draw lines domain 3 (lower footing lower right corner)
+    \foreach \y in {0.,\step,...,.3}{
+      \draw[thin] (.35,-.1-\y) -- (.05+\y,-.4);}         
+    % draw lines domain 4 (upper footing lower right corner)
+    \foreach \x in {0.,\step,...,.3}{
+      \draw[thin] (.35-\x,.1) -- (.35,.1+\x);}
+    % draw lines domain 2 (upper footing center)
+    \foreach \x in {.3,\stepp,...,.69}{
+      \draw[thin] (.35-\x,.1) -- (.65-\x,.4);}
+    % draw lines domain 3 (upper footing upper left corner)
+    \foreach \y in {0.,\step,...,.3}{
+      \draw[thin] (-.35,.1+\y) -- (-.05-\y,.4);}         
+  \end{scope}
+}
+
+
+
+%================================================
+% hinge
+%================================================
+
+\def\hingeRadius{0.09}
+%%% \Vollgelenk{shift}[scale]  
+%%%     [scale] is optional 
+\newcommandx{\Vollgelenk}[3][2=0,3=1.]{  
+  \begin{scope}[shift={(#1)},rotate=#2,scale=#3] 
+    \draw[thick, fill=white] (0.,0.) circle (\hingeRadius);
+  \end{scope}
+}
+
+%%% \Halbgelenk{shift}[rotate][scale] 
+%%%     [rotate][scale] are optional
+
+\newcommandx{\Halbgelenk}[3][2=0,3=1.]{
+  \begin{scope}[shift={(#1)},rotate=#2,scale=#3] 
+    \def\offset{-0.015};
+    \draw[thick, fill=white] ($(\hingeRadius,0.)+(0.0,\offset)$) 
+    arc (0:-180:\hingeRadius);
+  \end{scope}
+}
+
+%%% \Kugelgelenk{shift}[radius]  
+%%%     [radius] is optional 
+\newcommandx{\Kugelgelenk}[2][2=1.]{ 
+\draw (#1)circle(2pt*#2);
+\fill[color=white] (#1)circle(2pt*#2); 
+}
+
+
+%================================================
+% spring style 
+%================================================
+
+%%% \Wegfeder{shift}[rotate][scale][LagerType][springlength] 
+%%%     [rotate][scale][LagerType][springlength]  are optional
+%%%     LagerType=0 feste Einspannung
+%%%         else other LagerType still have to be added 
+
+\newcommandx{\Wegfeder}[5][2=0,3=1.,4=0,5=1.6]{
+  \def\springlength{#5}
+  \begin{scope}[shift={(#1)},rotate=#2,scale=#3]
+    \draw[snake=zigzag,line before snake=3mm, line after snake=3mm,
+    segment length=6,
+     segment amplitude=5pt,
+     %join=round,
+      thin] 
+    (0,0.) -- (\springlength,0.); 
+    \ifthenelse{\equal{#4}{0}}{\Einspannung{(\springlength,0)}[90][#3][#4]}{}
+    \ifthenelse{\equal{#4}{1}}{\Parallelfuehrung{(\springlength,0)}[90][#3][#4]}
+    {}
+  \end{scope}
+}
+
+
+%%% \RelativWegfeder{point1}{point2}
+\newcommandx{\RelativWegfeder}[2]{
+	\draw
+	let
+	\p1=(#1), \p2=(#2), \n1={veclen(\y2-\y1,\x2-\x1)}
+	in
+	[snake=zigzag,line before snake=3mm, line after snake=3mm,
+		segment length= 0.1 * \n1,
+		segment amplitude=5pt,join=round, thin] (#1) -- (#2);		
+		\Vollgelenk{#1};
+		\Vollgelenk{#2};
+}
+
+
+%%% \RelativDrehfeder{shift}[scale][start domain][end domain] 
+%%% [rotate][scale][start domain][end domain]  are optional
+\newcommandx{\RelativDrehfeder}[4][2=1.,3=0, 4=25.12]{ 
+  % 15.708=5*\pi, 25.12=8*\pi
+  % spring spiral]
+  \begin{scope}[shift={(#1)},scale=#2]		
+    \def\xshift{-0.2}
+    \def\yshift{-0.4}
+    \pgfmathsetmacro\xCoordSprEnd{- #4 * #4 * 0.001};
+    \draw[thin] [domain=#3:#4,variable=\t,smooth,
+    samples=500] plot ({\t r}: {-0.001*\t*\t});
+  \end{scope}  
+}
+
+
+
+\newcommandx{\Drehfeder}[5][2=0,3=1.,4=0,5=1]{
+	% spring spiral]
+	\begin{scope}[shift={(#1)},rotate=#2,scale=#3]
+		
+		% Define variables to draw the support of the spring
+		\ifthenelse{\equal{#4}{0}}%
+		% spring is not connected to any kind of 'LagerType'
+		{ 
+			\def\xshift{0.7};
+			\def\yshift{-0.4};
+			\def\startDomain{0.};
+			% xPosition of the upper left corner
+			\def\xposRectangleL{-0.3}; 
+			% xPosition of the upper right corner
+			\def\xposRectangleR{0.3};
+			\def\gapL{-0.01};
+			\def\gapR{0.01};
+			% Length of Rectangle = 0.6
+			\pgfmathsetmacro\rectangleLength{\xposRectangleR-\xposRectangleL};
+		}%
+		% spring is connected to 'Loslager' or 'Festlager'
+		{ \def\xshift{0.709};
+			\def\startDomain{15.708};
+			
+			\ifthenelse{\equal{#5}{1}}%
+			{
+				\def\gapL{-0.01};
+				\def\gapR{0.0};
+				% xPosition of the upper left corner
+				\def\xposRectangleL{-0.3}; 
+				% xPosition of the upper right corner
+				\def\xposRectangleR{0.1};
+			}{}
+			\ifthenelse{\equal{#5}{-1}}%
+			{ \def\gapL{0.}
+				\def\gapR{0.01}
+				% xPosition of the upper left corner        
+				\def\xposRectangleL{-.1}
+				% xPosition of the upper right corner
+				\def\xposRectangleR{0.3}
+			}{}
+			\pgfmathsetmacro\rectangleLength{\xposRectangleR-\xposRectangleL};
+			
+			% specification of 'Loslager'
+			\ifthenelse{\equal{#4}{1}}%
+			{ \def\yshift{-0.5} }{}
+			%  % specification of 'Festlager'
+			\ifthenelse{\equal{#4}{2}}%
+			{ \def\yshift{-0.4} }{}
+		}
+		% spring with FullHinge
+		\ifthenelse{\equal{#4}{3}}%
+		% spring is not connected to any kind of 'LagerType'
+		{ 
+			\def\xshift{0.7}
+			\def\yshift{-0.4}
+			\Vollgelenk{#1}
+			\def\startDomain{15.708}
+			% xPosition of the upper left corner
+			\def\xposRectangleL{-0.3}
+			% xPosition of the upper right corner
+			\def\xposRectangleR{0.3}
+			\def\gapL{-0.01}
+			\def\gapR{0.01}
+			% Length of Rectangle = 0.6
+			\pgfmathsetmacro\rectangleLength{\xposRectangleR-\xposRectangleL}
+		}%
+		
+		\pgfmathsetmacro\xCoordSprEnd{-25.12*25.12*0.001};
+		%\begin{scope}[shift={(#1)},scale=.7]
+		\begin{scope}[shift={(\xCoordSprEnd*\xshift*#5+\xshift/2+0.1 , 0.)},scale=.7]
+			% domain: start_value: end_value(=8*\pi) 
+			\draw[thin] [domain=\startDomain:25.1327412,variable=\t,smooth,
+			samples=500] plot ({\t*#5 r}: {-0.001*\t*\t*#5});
+			%\draw[thin] (#1)--++(0.,-0.4*1.4);
+			\draw[thin] (\xCoordSprEnd*#5,0.01)--++(0.,-0.4*1.4);
+		\end{scope}
+		
+		%		 Draw the support of the spring
+		\def\rectangleHigh{0.3}
+		%\begin{scope}[shift={(#1)},xscale=1.]
+		\begin{scope}[shift={(\xCoordSprEnd*\xshift*#5,\yshift)},xscale=1.]
+			% draw separators
+			\draw[thick] (\xposRectangleL+\gapL,0.0) -- 
+			(\xposRectangleR+\gapR,0.);   
+			\ifthenelse{\equal{#4}{1}}% if Loslager connected
+			{\draw[thick] (\xposRectangleL-0.01,0.1) --(\xposRectangleR+\gapR,0.1);}{}
+			% draw lines at footing
+			\def\step{0.1}
+			\pgfmathsetmacro\stepTwo{\rectangleHigh+\step}
+			% draw lines domain 1 (upper left corner)
+			\foreach \x in {0.,\step,...,\rectangleHigh}{
+				\draw[thin] (\xposRectangleL+\x,0.) -- 
+				(\xposRectangleL,-\x);}
+			% draw lines domain 2 (center)
+			\foreach \x in {\rectangleHigh,\stepTwo,...,\rectangleLength}{
+				\draw[thin] (\xposRectangleL+\x,0.) -- 
+				(-\rectangleHigh+\xposRectangleL+\x,-\rectangleHigh);}
+			% draw lines domain 3 (lower right corner)
+			\foreach \y in {0.,\step,...,\rectangleHigh}{
+				\draw[thin] (\xposRectangleR,-\y) -- 
+				+(-\rectangleHigh+\y,-\rectangleHigh+\y);} 
+		\end{scope}
+	\end{scope}  
+}
+
+
+%================================================
+% dash pot - Dämpfer 
+%================================================
+
+%%% \Daempfer{shift}[rotate][scale][LagerType][length] 
+%%%     [rotate][scale][LagerType][length]  are optional
+%%%     LagerType=0 feste Einspannung
+%%%         else other LagerType still have to be added 
+
+\newcommandx{\Daempfer}[5][2=0,3=1.,4=0,5=1.6]{
+  \def\length{#5}
+  \begin{scope}[shift={(#1)},rotate=#2,scale=#3]
+    % dash
+    \draw (0,0.) -- (.45*\length,0.);
+    \draw (.45*\length,0.1*\length) -- (.45*\length,-0.1*\length);
+    % pot
+    \draw (.55*\length,0.) -- (\length,0.);
+    \draw (.55*\length,0.15*\length) -- (.55*\length,-0.15*\length);
+    \draw (.35*\length,0.15*\length) -- (.55*\length,0.15*\length);
+    \draw (.35*\length,-0.15*\length) -- (.55*\length,-0.15*\length);
+
+    \ifthenelse{\equal{#4}{0}}%
+    {\Einspannung{(\length,0)}[90][#3][#4]}{}%
+    \ifthenelse{\equal{#4}{1}}%
+    {\Parallelfuehrung{(\springlength,0)}[90][#3][#4]}
+    {}
+  \end{scope}
+}
+
+
+
+%================================================
+% Schnittufer
+%================================================
+
+%%% \Schnittufer{shift}[rotate][scale] 
+%%%     [rotate][scale] are optional
+
+\newcommandx{\Schnittufer}[3][2=0,3=1.]{
+  \def\snakeLength{.3}
+  \def\snakeAmplitude{0.22}
+  \begin{scope}[shift={(#1)},rotate=#2,scale=#3]
+    \draw  (0,-\snakeLength) .. controls (\snakeAmplitude,-0.5*\snakeLength) and 
+    (-\snakeAmplitude,0.5*\snakeLength) .. (0,\snakeLength);
+  \end{scope}
+}
+%================================================
+% Schnittgroessen
+%================================================
+
+%%% \Schnittgroessen{shift}[pos][orientation][rotate][scale][domain]
+%%%     [pos][orientation][rotate][scale]  are optional
+
+\newcommandx{\Schnittgroessen}[6][2=0,3=0,4=0,5=1.,6=]{
+  \def\snakeLength{.3}
+  \def\snakeAmplitude{0.22}
+  \begin{scope}[shift={(#1)},rotate=#4,scale=#5]
+    % x-z positiv
+    \ifthenelse{\equal{#3}{0}}{
+      \draw[semithick,->] (0.2,0.5) -- +(0,-1)
+      node[at end, below, xshift=2mm]{$Q_{z_{#6}}(#2)$};
+      \draw[semithick,->] (0.5,-0.55) arc(-30:30:1.1)
+      node[right,yshift=1mm]{$M_{y_{#6}}(#2)$};
+      \draw[semithick,->] (0.1,0) -- +(1,0)
+      node[at end,below right]{$N_{#6}(#2)$};
+    } {}
+    % x-z negativ
+    \ifthenelse{\equal{#3}{1}}{
+      \draw[semithick,->] (-0.2,-0.5) -- +(0,1) node[right]{$Q_{z_{#6}}(#2)$};
+      \draw[semithick,->] (-0.5,-0.55) arc(210:150:1.1) node[above]{$M_{y_{#6}}(#2)$};
+      \draw[semithick,->] (-0.1,0) -- +(-1,0) node[left]{$N_{#6}(#2)$};
+    } {}
+    % x-y positiv
+    \ifthenelse{\equal{#3}{2}}{
+      \draw[semithick,<-] (0.2,-0.5) -- +(0,1) node[left]{$Q_{y_{#6}}(#2)$};
+      \draw[semithick,<-] (0.5,-0.55) arc(-30:30:1.1) node[right]{$M_{z_{#6}}(#2)$};
+      \draw[semithick,->] (0.1,0) -- +(1,0) node[right ]{$N_{#6}(#2)$};
+    } {}
+    % x-y negativ
+    \ifthenelse{\equal{#3}{3}}{
+      \draw[semithick,->] (-0.2,-0.5) -- +(0,1) node[right]{$Q_{y_{#6}}(#2)$};
+      \draw[semithick,<-] (-0.5,-0.55) node[below]{$M_{z_{#6}}(#2)$} arc(210:150:1.1) ;
+      \draw[semithick,->] (-0.1,0) -- +(-1,0) node[left]{$N_{#6}(#2)$};
+    } {}
+  \end{scope}
+}
+
+%================================================
+% Belastung normal auf einen Stab
+%================================================
+%%% \Belastung{xPos}{yPos}{magnitude}[arrows][hh] 
+%%%     [arrows][hh]  are optional
+% parameter \x in [0,1]
+% 1 ... Funktion der x-Koordinate, use parameter \x
+% 2 ... Funktion der y-Koordinate, use parameter \x
+% 3 ... magnitude, use parameter \x 
+% 4 ... number of arrows
+% 5 ... numerical parameter
+% Example usage:
+\iffalse
+\documentclass[tikz]{standalone}
+\usepackage{IAM_Lager}
+\begin{document}
+\begin{tikzpicture}[>=latex]
+\draw[thick] (0,0) -- (3,4);
+\Belastung{3*\x}{4*\x}{0.3+\x};
+%\Belastung{3*cos(\x*3.14)}{4*sin(\x*3.14)}{0.3+\x}[5][0.1];
+\Belastung{6+3*cos(\x*90)}{4*sin(\x*90)}{0.3+\x};          
+\end{tikzpicture}		
+\end{document}
+\fi
+\newcommandx{\Belastung}[5][4=5,5=0.01]{
+% define a counter for unique function names
+\makeatletter
+\ifcsname c@IAMcounBel\endcsname
+\else
+\newcounter{IAMcounBel}
+\fi
+\makeatother
+
+\tikzmath{
+	\hh = #5;
+	\eps = 0.001; % epsilon to prevent division by zero
+	function funcX\theIAMcounBel(\x) {return #1;};
+	function funcY\theIAMcounBel(\x) {return #2;};
+	function funcP\theIAMcounBel(\x) {return #3;};
+	% tangent vector length squared (adding epsilon before sqrt is more numerically stable)
+	function funcLenSq\theIAMcounBel(\x) {
+		return max((funcY\theIAMcounBel(\x+\hh)-funcY\theIAMcounBel(\x))*(funcY\theIAMcounBel(\x+\hh)-funcY\theIAMcounBel(\x))+(funcX\theIAMcounBel(\x+\hh)-funcX\theIAMcounBel(\x))*(funcX\theIAMcounBel(\x+\hh)-funcX\theIAMcounBel(\x)), \eps);
+	};
+}
+% plot the line using numerical differentiation for the normal vector
+\draw[] plot[domain=0:1,samples=25,smooth] (
+{funcX\theIAMcounBel(\x)-funcP\theIAMcounBel(\x) * (funcY\theIAMcounBel(\x+\hh)-funcY\theIAMcounBel(\x)) / sqrt(funcLenSq\theIAMcounBel(\x))},
+{funcY\theIAMcounBel(\x)+funcP\theIAMcounBel(\x)*(funcX\theIAMcounBel(\x+\hh)-funcX\theIAMcounBel(\x))/ sqrt(funcLenSq\theIAMcounBel(\x))});
+
+
+% plot the arrows using numerical differentiation for the normal vector
+\pgfmathsetmacro{\epsL}{0.1} % epsilon to prevent plotting only arrow heads
+\foreach \i in {0,1,...,#4}{
+	%\pgfmathsetmacro{\jn}{(funcY\theIAMcounBel(\i/#4+\hh)-funcY\theIAMcounBel(\i/#4)};
+	%\pgfmathsetmacro{\jnx}{(funcX\theIAMcounBel(\i/#4+\hh)-funcX\theIAMcounBel(\i/#4)};
+	\pgfmathparse{abs(funcP\theIAMcounBel(\i/#4+\hh))>\epsL ? 1 : 0}
+	\ifnum\pgfmathresult=1
+		\draw[<-] ({funcX\theIAMcounBel(\i/#4)},{funcY\theIAMcounBel(\i/#4)}) -- (
+		{funcX\theIAMcounBel(\i/#4)-funcP\theIAMcounBel(\i/#4+\hh) * (funcY\theIAMcounBel(\i/#4+\hh)-funcY\theIAMcounBel(\i/#4)) / sqrt(funcLenSq\theIAMcounBel(\i/#4))},
+		{funcY\theIAMcounBel(\i/#4)+funcP\theIAMcounBel(\i/#4+\hh)*(funcX\theIAMcounBel(\i/#4+\hh)-funcX\theIAMcounBel(\i/#4))/ sqrt(funcLenSq\theIAMcounBel(\i/#4))})
+		%node {\jn,\jnx}
+		;
+	\fi
+}
+% increment the counter
+\stepcounter{IAMcounBel}
+}
+
+
+%================================================
+% Koordinatensystem
+%================================================
+
+%%% \Koordinatensystem{shift}[scale][orientation][xlength][ylength] 
+%%%             [xlabel][ylabel][xlabelpos][ylabelpos]
+%%% 
+%%%     [scale][orientation][xlength][ylength][xlabel][ylabel]
+%%%     [xlabelpos][ylabelpos] are optional 
+% orientation = 0 ... out of plane
+% orientation = 1 ... towards plane
+% orientation = 2 ... no orientation
+
+\newcommandx{\Koordinatensystem}[9][2=1.,3=0,4=0.9,5=-0.9,
+                        6={\small$x$},7={\small$z$},
+                        8={at end, below},9={at end,left}]{
+  \begin{scope}[shift={(#1)},scale=#2]
+    \def\xlength{#4}
+    \def\ylength{#5}
+    \def\rr{0.07}
+
+    \draw[very thin,->] (0,0) -- +(\xlength,0.) node[#8]{#6};
+    \draw[very thin,->] (0,0) -- +(0.,\ylength) node[#9]{#7};
+    
+    \ifthenelse{\equal{#3}{0}} %
+    % draw out of plane
+    { 
+      \filldraw[fill=white,draw=black, semithick] (0,0) circle (\rr);
+      \fill[color=black] (0,0) circle (\rr/4);
+    } %
+    { \ifthenelse{\equal{#3}{1}} %
+      % draw towards plane
+      {        
+        \filldraw[fill=white,draw=black,  semithick] (0,0) circle (\rr);
+        \draw[color=black, very thin] ({-\rr/sqrt(2)},{-\rr/sqrt(2)}) -- 
+        ({\rr/sqrt(2)},{\rr/sqrt(2)});
+        \draw[color=black, very thin] ({\rr/sqrt(2)},-{\rr/sqrt(2)}) -- 
+        ({-\rr/sqrt(2)},{\rr/sqrt(2)});
+      } %
+      % else: no orientation, but towards plane  
+      {}
+    }
+  \end{scope}
+}
+
+
+%================================================
+% Bemassung
+%================================================
+
+%%% \Bemassung{point1}{point2}{label}[offset][orientation][labelpos] 
+%%%     [offset][orientation][labelpos]   are optional
+% orientation = 0 ... go directly along the line from point1 to point2
+% orientation = 1 ... go horizontally (direction 1) from point1 to point2
+% orientation = 2 ... go vertically   (direction 2) from point1 to point2
+
+\newcommandx{\Bemassung}[6][4=1.,5=0,6={pos=.5, above}]{
+  %
+  \ifthenelse{\equal{#5}{0}}%
+    % true: go along the line from point1 to point2
+    {
+      \draw[|<->|, very thin] let \p1 = (#1), \p2 = (#2) in
+      ($(#1)!#4 cm!(\x1-\y2+\y1,\y1+\x2-\x1)$) --++ (\x2-\x1,\y2-\y1)
+      node[#6]{#3};
+    } %
+    % else: check again
+    {
+      \ifthenelse{\equal{#5}{1}}%
+      % true: go horizontally from point1 to point2
+      {
+        \draw[|<->|, very thin] let \p1 = (#1), \p2 = (#2) in
+        ($(\x1,#4)$) -- ($(\x2,#4)$) node[#6]{#3};
+      } %
+      % else: go vertically from point1 to point2
+      {
+        \draw[|<->|, very thin] let \p1 = (#1), \p2 = (#2) in
+        ($(#4,\y1)$) -- ($(#4,\y2)$) node[#6]{#3};
+      }
+    }
+}
+
+
+
+%    \Untergrund{start}[length][orientation][thickness]
+\newcommandx{\Untergrund}[4][2=1,3=0,4=0.28]{%
+	\begin{scope}[shift={(#1)},rotate=#3] 
+		\draw[thick] (0,0) -- (#2,0);
+		\fill[pattern = north east lines] (0,0) rectangle (#2,-#4);
+	\end{scope}
+}
+

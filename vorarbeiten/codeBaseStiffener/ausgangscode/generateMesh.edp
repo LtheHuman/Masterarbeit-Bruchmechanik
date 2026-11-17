@@ -1,0 +1,16 @@
+mesh Th;
+int[int] ll = [1,1,1,1];
+int count = 0;
+int[int,int] patchToRegions(widthX.n,widthY.n);
+for (int i=0; i<widthX.n; i++){
+    for(int j=0; j<widthY.n; j++){
+        ll = [((j==0) ? 1 : 102+j),((i==widthX.n-1) ? 1 : i+3),((j==widthY.n-1) ? 1 : 101+j),((i==0) ? 1 : i+2)];	
+        Th = Th + square(nn,nn,[startX[i] + widthX[i]*x,startY[j] + widthY[j]*y],label=ll,region=count, flags=1);
+        patchToRegions(i,j) = count;
+        count = count + 1;
+    }
+}
+mesh ThWithLabels = Th; 
+Th = change(Th, flabel=(label==1)+2*(label>1));
+if (mmg) Th = mmg2d(Th,hmax=0.3125); 
+//plot(Th,wait=1);

@@ -1,0 +1,77 @@
+
+// ---- Randbedingungen aufbereiten --------------------------------------------
+// bcType[e], e=0..3 fuer die Kanten unten(11)/rechts(12)/oben(13)/links(14):
+//   0 = eingespannt: u=0 UND Verdrehung=0  -> stark via on(...) erzwungen
+//   1 = gelenkig:    u=0, Verdrehung frei  -> Feder/Penalty int1d(c*u0*v)
+//   2 = frei:        nichts tun            -> natuerliche Randbedingung
+int nClamp = 0;   // Anzahl eingespannter Kanten
+int nFree = 0;    // Anzahl freier Kanten
+for (int e=0; e<4; e++){
+    if (bcType[e]==0) nClamp = nClamp+1;
+    if (bcType[e]==2) nFree = nFree+1;
+}
+// Schutz: ohne jede Lagerung waere das System singulaer
+if (nFree==4){
+    cout << "ERROR: all four edges free -> rigid body modes, singular system." << endl;
+    assert(nFree<4);
+}
+// Labels der eingespannten Kanten einsammeln (braucht on() weiter unten, damit nur diese Kanten u=0 und Verdrehung=0 bekommen)
+int[int] clampLabs(nClamp+1);
+clampLabs = 99;
+{
+    int k = 0;
+    for (int e=0; e<4; e++){
+        if (bcType[e]==0){ clampLabs[k] = 11+e; k = k+1; }
+    }
+}
+// Schalter fuer die Federterme: hinge[e]=1 nur wenn Kante e gelenkig ist,
+// sonst 0 -> der zugehoerige Penalty-Term faellt weg.
+real[int] hinge(4);
+for (int e=0; e<4; e++) hinge[e] = (bcType[e]==1);
+
+// ---- Legendentext fuer Plots ---------------------------------------------------
+string[int] bcName(3);
+bcName[0] = "eingespannt";
+bcName[1] = "gelenkig(Feder)";
+bcName[2] = "frei";
+string bcLegend = "Lagerung: unten=";
+bcLegend = bcLegend + bcName[bcType[0]];
+bcLegend = bcLegend + " rechts=";
+bcLegend = bcLegend + bcName[bcType[1]];
+bcLegend = bcLegend + " oben=";
+bcLegend = bcLegend + bcName[bcType[2]];
+bcLegend = bcLegend + " links=";
+bcLegend = bcLegend + bcName[bcType[3]];
+
+// ---- Finite-Elemente-Raeume ----------------------------------------------------
+fespace Wh(Th, P2);   // P2-Raum: nur fuer Interpolation der Loesung (Plot/Export)
+fespace Vh(Th, HCT);  // HCT-Raum: C1-stetig, 3 Komponenten pro Funktion:
+                      // [u, ux, uy] = Durchbiegung + deren Gradient (Freiheitsgrade)
+
+Vh [u0, ux0, uy0], [v, vx, vy];   // u0 = Loesung, v = Testfunktion
+
+// ---- Schwache Form loesen -------------------------------------------------------
+macro plateEnergy(u, v) (dxx(u)*dxx(v) + dyy(u)*dyy(v)
+    + nu*(dxx(u)*dyy(v) + dyy(u)*dxx(v))
+    + 2.*(1.-nu)*dxy(u)*dxy(v))	// end of macro
+
+macro kss(w) (dxx(w)*N.y^2 - 2.*dxy(w)*N.x*N.y + dyy(w)*N.x^2) // end of macro
+macro ksn(w) (N.x*N.y*(dyy(w) - dxx(w)) + (N.x^2 - N.y^2)*dxy(w)) // end of macro
+
+// Energie Platte + Energie Balken = Arbeit der Last, plus Randterme.
+solve bilap ([u0, ux0, uy0], [v, vx, vy])
+    = int2d(Th, qft=qfHCT5)(D*plateEnergy(u0, v)) // Platte: Biegeenergie
+    + int1d(Th, 2)(EI*kss(u0)*kss(v))          // Steifen: Balken-Biegeenergie
+    + int1d(Th, 2)(GIt*ksn(u0)*ksn(v))   // Steifen: Balken-Torsionsenergie
+    - int2d(Th)(f*v)                              // Gleichlast
+    + int1d(Th, 11)(hinge[0]*c*u0*v)              // Feder unten  (nur falls gelenkig)
+    + int1d(Th, 12)(hinge[1]*c*u0*v)              // Feder rechts (nur falls gelenkig)
+    + int1d(Th, 13)(hinge[2]*c*u0*v)              // Feder oben   (nur falls gelenkig)
+    + int1d(Th, 14)(hinge[3]*c*u0*v)              // Feder links  (nur falls gelenkig)
+    + on(clampLabs, u0=0, ux0=0, uy0=0);          // Einspannung (u und Gradient = 0)
+//plot(u0,fill=1,cmm="displacement");
+
+// ---- Zielfunktion ---------------------------------------------------------------
+// Compliance (Nachgiebigkeit) = Arbeit der Last; klein = steife Struktur
+real compliance = int2d(Th)(f*u0);
+cout << "compliance: " << compliance << endl;

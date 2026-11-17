@@ -1,0 +1,189 @@
+// PARAM -v 0
+
+// ---- Bibliotheken ------------------------------------------------
+load "Element_HCT"  // HCT-Element: C1-stetiges Dreieckselement, noetig fuer
+                    // Plattenbiegung (PDE 4. Ordnung, zweite Ableitungen!)
+load "qf11to25"     // stellt tripleQF bereit: feinere Quadratur fuer HCT
+load "iovtk"        // savevtk: Export der Loesung fuer ParaView
+load "mmg"          // mmg2d: Neuvernetzung (gleichmaessige Elementgroesse)
+
+bool mmg = true;                 // true = Netz nach dem Zusammenbau mit mmg2d glaetten
+QF2 qfHCT5 = tripleQF(qf5pT);
+cout.precision(10);
+cout.fixed;
+
+// ---- Optimierungs-Parameter -------------------------------------------------
+int maxIterations = 50;          // Anzahl Gradientenschritte
+real stepsizeH = 5*25;        // Schrittweite fuer horizontale Steifen (y-Positionen)
+real stepsizeV = 5*25;        // Schrittweite fuer vertikale Steifen (x-Positionen)
+
+// ---- Geometrie- und Netz-Parameter ------------------------------------------
+int nn = 40;                     // Netzaufloesung: nn x nn Elemente PRO Patch (vor mmg)
+real L0 = 40.;                   // Plattenlaenge in x-Richtung
+real H0 = 10.;                   // Plattenhoehe in y-Richtung
+int nV = 2;                      // Anzahl vertikaler Steifen (Linien x = const)
+int nH = 0;                      // Anzahl horizontaler Steifen (Linien y = const)
+
+// ---- Physikalische Parameter -------------------------------------------------
+real c = 1e15;  // Federsteifigkeit (Penalty) fuer GELENKIGE Lagerung
+real f = 1e-1;  // Flaechenlast senkrecht zur Platte
+real EI = 100;   // Biegesteifigkeit der Steifen (Balken)
+real D = 1;     // Plattensteifigkeit
+real nu = 0.4;   // Querkontraktionszahl der Platte = "Torsion der Platte"
+real GIt = 1;   // Torsionssteifigkeit der Steifen (Balken)
+
+// ---- Lagerung des Aussenrandes -----------------------------------------------
+// Pro Kante waehlbar, Reihenfolge: [unten, rechts, oben, links]
+//   0 = eingespannt (u=0 und Verdrehung=0, via on())
+//   1 = gelenkig    (u=0 ueber Federn/Penalty, Verdrehung frei)
+//   2 = frei        (kein Term -> natuerliche Randbedingung Mn=0, Vn=0)
+int[int] bcType = [2, 0, 0, 0];  // Default: unten gelenkig, Rest eingespannt
+
+// ---- Steifen-Anfangspositionen ------------------------------------------------
+// Die Platte wird durch die Steifen in (nV+1) x (nH+1) rechteckige Patches
+// geteilt. widthX/widthY sind die Patch-Breiten, startX/startY die Trennlinien
+// (= Steifenpositionen). Start: gleichmaessig verteilt.
+
+real[int] widthX(nV+1);          // Breiten der nV+1 Spalten
+real[int] widthY(nH+1);          // Hoehen der nH+1 Zeilen
+
+widthX = L0/real(nV+1);          // gleichmaessige Anfangsverteilung in x
+widthY = H0/real(nH+1);          // gleichmaessige Anfangsverteilung in y
+
+
+
+real[int] startX(widthX.n+1); for (int i=1; i<widthX.n+1; i++) startX[i] = startX[i-1] + widthX[i-1];
+real[int] startY(widthY.n+1); for (int i=1; i<widthY.n+1; i++) startY[i] = startY[i-1] + widthY[i-1];
+
+real[int] xx(maxIterations), yy(maxIterations);
+
+// ---- Ausgabedateien -----------------------------------------------------------
+string FILEIME = "L0=" + L0 + "_H0=" + H0 + "_N=" + nn + "_EI=" + EI + "_D=" + D;
+ofstream file(FILEIME+"rez.txt");
+file << "L0 = " << L0 << endl;
+file << "H0 = " << H0 << endl;
+file << "nn = " << nn << endl;
+file << "EI = " << EI << endl;
+file << "D = " << D << endl;
+file << "nu = " << nu << endl;
+file << "bcType (bottom,right,top,left; 0=clamped,1=hinged,2=free) = " << bcType << endl;
+file << "initial widths = " << widthX << endl;
+file << "initial heights = " << widthY << endl;
+
+{
+ofstream fout("objectiveplate.txt");
+fout << "iteration, objective" << endl;
+}
+
+
+
+for (int iteration=0; iteration<maxIterations; iteration++){
+    cout << "iteration: " << iteration << endl;
+
+    // Patch-Breiten aus den (im letzten Schritt verschobenen) Trennlinien
+    for (int i=0; i<widthX.n; i++){widthX[i] = startX[i+1] - startX[i];}
+    for (int i=0; i<widthY.n; i++){widthY[i] = startY[i+1] - startY[i];}
+    cout << "startX: " << startX << endl;
+    cout << "startY: " << startY << endl;
+    cout << "widthX: " << widthX << endl;
+    cout << "widthY: " << widthY << endl;
+
+    // 1) Netz erzeugen -> liefert Th (Rechennetz) und ThWithLabels (Originallabels)
+    include "generateMesh.edp"
+
+    // 2) Problem loesen -> liefert u0 (Durchbiegung), compliance, bcLegend
+    include "solveStiffener.edp"
+
+    // Plot mit Legende: Titelzeile (cmm) zeigt die Lagerung jeder Kante an
+    string plotTitle = bcLegend;
+    plotTitle = plotTitle + " | Iteration ";
+    plotTitle = plotTitle + iteration;
+    plot(Th, u0, cmm=plotTitle);
+
+    // Export fuer ParaView: Durchbiegung u0 auf dem Netz mit Originallabels
+    int[int] order = [1];        // 1 = Daten als P1 (Knotenwerte) speichern
+    string data = "w";           // Name des Feldes in ParaView
+    Wh uu = u0;                  // HCT-Loesung auf P2-Raum interpolieren
+    savevtk("results/optPlateStiffener"+string(iteration)+".vtu",ThWithLabels,uu,order=order,dataname=data);
+
+
+    fespace Whdc(ThWithLabels, P2dc);    // (derzeit ungenutzt, historisch)
+    real[int] analyticDerivativeVerticalStiffener(widthX.n-1);
+    for (int i=0;i<widthX.n-1;i++){
+        real s0 = startX[i];     // linke Nachbar-Trennlinie
+        real s1 = startX[i+1];   // Position der bewegten Steife
+        real s2 = startX[i+2];   // rechte Nachbar-Trennlinie
+        // Buckel-Funktion V(x) mit V(s1)=1, V(s0)=V(s2)=0, sowie 1. und 2. Ableitung
+        func Vx = (((s0-x)^2*(x-s2)^2)/((s0-s1)^2*(s1-s2)^2))*(x>startX[i])*(x<startX[i+2]);
+        func dVx = (-((2*(s0-x)*(s2-x)*(s0+s2-2*x))/((s0-s1)^2*(s1-s2)^2)))*(x>startX[i])*(x<startX[i+2]);
+        func ddVx = (2*(s0^2+4*s0*s2-6*s0*x+s2^2-6*s2*x+6*x^2))/((s0-s1)^2*(s1-s2)^2)*(x>startX[i])*(x<startX[i+2]);
+
+        // Anteil der Platte: Last-Term + Transport der Biegeenergie
+        //plate only: int2d(Th)(-D*(-2*nu*(2*dx(Vx)*dxx(u) + dxx(Vx)*dx(u))*(dxx(u) + dyy(u)) + 2*(nu - 1)*((2*dx(Vx)*dxx(u) + dxx(Vx)*dx(u))*dxx(u) + 2*dx(Vx)*dxy(u)**2) + (nu*(dxx(u) + dyy(u))**2 - (nu - 1)*(dxx(u)**2 + dyy(u)**2 + 2*dxy(u)**2))*dx(Vx))) 
+        //          - int2d(Th)(-f*u*dx(Vx)) + int2d(Th)(f*u*dx(Vx))
+
+        analyticDerivativeVerticalStiffener[i] = int2d(Th)(2.*f*u0*dVx);
+        analyticDerivativeVerticalStiffener[i] += int2d(Th)(-D*(-2*nu*(2*dVx*dxx(u0)  + ddVx*dx(u0))*(dxx(u0) + dyy(u0)) + 2*(nu - 1)*((2*dVx*dxx(u0)  + ddVx*dx(u0))*dxx(u0) + 2*dVx*dxy(u0)^2)  + (nu*(dxx(u0) + dyy(u0))^2 - (nu - 1)*(dxx(u0)^2 + dyy(u0)^2 + 2*dxy(u0)^2))*dVx));
+        
+        // Anteil der HORIZONTALEN Steifen (deren Balkenenergie haengt von x ab,
+        // weil sich das Integrationsgebiet mit verschiebt); Labels 101+j in ThWithLabels
+
+        // Neu: Anteil Torsion: + int1d(Th, 2)(GIt*dx(Vx)*dxy(u)**2)
+
+        for (int j=0; j<widthY.n-1; j++){
+            analyticDerivativeVerticalStiffener[i] += int1d(ThWithLabels, 101+j)(3*EI*dxx(u0)^2*dVx+2*EI*dx(u0)*dxx(u0)*ddVx);
+            analyticDerivativeVerticalStiffener[i] += int1d(ThWithLabels, 101+j)(GIt*dVx*dxy(u0)^2);
+        }
+
+        //Neu: Anteil der VERTIKALEN Steifen: Torsionsanteil der bewegten vertikalen Steife selbst (Label 3+i)
+        // only stiffener vertical: 2*int1d(Th, 2)(GIt*Derivative(Vx(x), x)*Derivative(u(x, y), x, y)**2)
+        
+        for (int j=0; j<widthX.n-1; j++){
+            analyticDerivativeVerticalStiffener[i] += int1d(ThWithLabels, 3+j)(2.*GIt*dxy(u0)^2*dVx);
+        }
+
+    }
+
+
+    real[int] analyticDerivativeHorizontalStiffener(widthY.n-1);
+    for (int i=0;i<widthY.n-1;i++){
+        real s0 = startY[i];
+        real s1 = startY[i+1];
+        real s2 = startY[i+2];
+        func Vy = (((s0-y)^2*(y-s2)^2)/((s0-s1)^2*(s1-s2)^2))*(y>startY[i])*(y<startY[i+2]);
+        func dVy = (-((2*(s0-y)*(s2-y)*(s0+s2-2*y))/((s0-s1)^2*(s1-s2)^2)))*(y>startY[i])*(y<startY[i+2]);
+        func ddVy = (2*(s0^2+4*s0*s2-6*s0*y+s2^2-6*s2*y+6*y^2))/((s0-s1)^2*(s1-s2)^2)*(y>startY[i])*(y<startY[i+2]);
+
+        analyticDerivativeHorizontalStiffener[i] = int2d(Th)(2.*f*u0*dVy);
+        analyticDerivativeHorizontalStiffener[i] += int2d(Th)(-D*(-2*nu*(2*dVy*dyy(u0)  + ddVy*dy(u0))*(dyy(u0) + dxx(u0)) + 2*(nu - 1)*((2*dVy*dyy(u0)  + ddVy*dy(u0))*dyy(u0) + 2*dVy*dxy(u0)^2)  + (nu*(dyy(u0) + dxx(u0))^2 - (nu - 1)*(dyy(u0)^2 + dxx(u0)^2 + 2*dxy(u0)^2))*dVy));
+        for (int j=0; j<widthX.n-1; j++){
+            analyticDerivativeHorizontalStiffener[i] += int1d(ThWithLabels, 3+j)(3*EI*dyy(u0)^2*dVy+2*EI*dy(u0)*dyy(u0)*ddVy);
+            analyticDerivativeHorizontalStiffener[i] += int1d(ThWithLabels, 3+j)(GIt*dVy*dxy(u0)^2);
+        }
+        for (int j=0; j<widthY.n-1; j++){
+            analyticDerivativeHorizontalStiffener[i] += int1d(ThWithLabels, 101+j)(2.*GIt*dxy(u0)^2*dVy);
+        }
+    }
+    cout << "analytic derivative vertical: " << analyticDerivativeVerticalStiffener << endl;
+    cout << "analytic derivative horizontal: " << analyticDerivativeHorizontalStiffener << endl;
+
+    // 4) Gradientenschritt: Steifenpositionen entgegen dem Gradienten verschieben
+    //    (Minimierung -> minus). Aeussere Trennlinien (Plattenrand) bleiben fest.
+    for (int i=1; i<startX.n-1; i++) startX[i] -= stepsizeV*analyticDerivativeVerticalStiffener[i-1];
+    for (int i=1; i<startY.n-1; i++) {startY[i] -= stepsizeH*analyticDerivativeHorizontalStiffener[i-1];
+    if (startY[i]<0.02) startY[i]=0.02; 
+    }
+
+    // Zielfunktionswert protokollieren (Konsole s.o., Datei hier)
+    xx[iteration] = iteration;
+    yy[iteration] = compliance;
+    ofstream fout("objectiveplate.txt",append); fout.precision(14); fout.fixed;
+    fout << iteration << ", " << compliance << endl;
+}
+
+// ---- Abschlussprotokoll in rez.txt --------------------------------------------
+file << "initial compliance: " << yy[0] << endl;
+file << "////////////////////////" << endl;
+file << "final widths: " << widthX << endl;
+file << "final heights: " << widthY << endl;
+file << "final compliance: " << yy[maxIterations-1] << endl;

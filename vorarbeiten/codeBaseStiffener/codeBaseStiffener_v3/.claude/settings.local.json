@@ -1,0 +1,31 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(//c/Users/luism/Documents/0.2 Optimization/codeBaseStiffener/ausgangscode/**)",
+      "Read(//c/Users/luism/Documents/0.2 Optimization/codeBaseStiffener/**)",
+      "Bash(time \"/c/Program Files \\(x86\\)/FreeFem++/FreeFem++.exe\" -nw runner.edp -name smoke -nV 2 -nH 0 -bc0 0 -bc1 0 -bc2 0 -bc3 0 -EI 100 -asym 1 -grid 1 -iters 3)",
+      "Bash(cp 'C:/Users/luism/Documents/0. Masterprojekt/Präsentation/beamerthemeTUGSFB.sty' 'C:/Users/luism/Documents/0.2 Optimization/codeBaseStiffener/codeBaseStiffener_v3/Latex/StiffenedPlate/')",
+      "Bash(cp 'C:/Users/luism/Documents/0. Masterprojekt/Präsentation/AMBM.pdf' 'C:/Users/luism/Documents/0.2 Optimization/codeBaseStiffener/codeBaseStiffener_v3/Latex/StiffenedPlate/')",
+      "Bash(cp 'C:/Users/luism/Documents/0. Masterprojekt/Präsentation/background_4-3.png' 'C:/Users/luism/Documents/0.2 Optimization/codeBaseStiffener/codeBaseStiffener_v3/Latex/StiffenedPlate/')",
+      "Bash(awk 'NF==3{if\\($3<min||NR==1\\)min=$3; if\\($3>max||NR==1\\)max=$3} END{print \"w_final min=\"min\" max=\"max}' runs/ref_w_final.dat)",
+      "Bash(awk 'NF==3{if\\($3<min||NR==1\\)min=$3; if\\($3>max||NR==1\\)max=$3} END{print \"w_init  min=\"min\" max=\"max}' runs/ref_w_init.dat)",
+      "Bash(awk '/==== bcOneway ====/{f=1} /==== n1 ====/{f=0} f' runs/matrix_log.txt)",
+      "Bash(bash copy_data.sh)",
+      "Read(//c/Users/luism/AppData/Local/Programs/MiKTeX/miktex/bin/x64/**)",
+      "Read(//c/Program Files/MiKTeX/miktex/bin/x64/**)",
+      "Read(//c/Users/luism/AppData/Local/**)",
+      "Bash(powershell.exe -NoProfile -Command \"\\(Get-Command pdflatex,lualatex,latexmk -ErrorAction SilentlyContinue | Select-Object -First 3\\).Source\")",
+      "Bash(perl -i -pe 's/\\\\x{2013}/--/g if $. == 289' presentationPlate.tex)",
+      "Bash(perl -CSD -i -pe 's/\\\\x{2013}/--/g' presentationPlate.tex)",
+      "Bash(awk 'NF==3{if\\($3>m||NR==1\\)m=$3} END{printf \"%.4f\\\\n\",m*1000}' runs/ref_w_init.dat)",
+      "Bash(awk 'NF==3{if\\($3>m\\)m=$3} END{printf \"bcHinged_w_final max = %.2f \\(expect ~27.5\\)\\\\n\",m}' Latex/StiffenedPlate/data/bcHinged_w_final.dat)",
+      "Bash(sed -i 's/\\\\\\\\cmap{6.6cm}{data\\\\/ref_w/\\\\\\\\cmap{6.2cm}{data\\\\/ref_w/g; s/\\\\\\\\cmap{6.6cm}{data\\\\/bcHinged_w_final.dat}{\\\\$30/\\\\\\\\cmap{6.2cm}{data\\\\/bcHinged_w_final.dat}{$30/; s/\\\\\\\\cmap{6.6cm}{data\\\\/cs825_w/\\\\\\\\cmap{6.2cm}{data\\\\/cs825_w/g; s/\\\\\\\\cmap{4.6cm}/\\\\\\\\cmap{4.2cm}/g' resultsPlate.tex)",
+      "Bash(grep -oE \"\\\\\\\\\\\\\\\\cmap\\\\{[0-9.]+cm\\\\}\" resultsPlate.tex)",
+      "PowerShell(Write-Output \"--- perl ---\"; \\(Get-Command perl -ErrorAction SilentlyContinue\\).Source; Write-Output \"--- pdflatex ---\"; \\(Get-Command pdflatex -ErrorAction SilentlyContinue\\).Source; Write-Output \"--- xelatex ---\"; \\(Get-Command xelatex -ErrorAction SilentlyContinue\\).Source; Write-Output \"--- lualatex ---\"; \\(Get-Command lualatex -ErrorAction SilentlyContinue\\).Source; Write-Output \"--- latexmk ---\"; \\(Get-Command latexmk -ErrorAction SilentlyContinue\\).Source)",
+      "PowerShell(pdflatex *)",
+      "PowerShell(winget *)",
+      "PowerShell($env:Path = [System.Environment]::GetEnvironmentVariable\\(\"Path\",\"Machine\"\\) + \";\" + [System.Environment]::GetEnvironmentVariable\\(\"Path\",\"User\"\\); Write-Output \"--- perl version ---\"; perl --version | Select-String \"This is perl\"; Write-Output \"--- perl path ---\"; \\(Get-Command perl\\).Source)",
+      "PowerShell(latexmk *)"
+    ]
+  }
+}

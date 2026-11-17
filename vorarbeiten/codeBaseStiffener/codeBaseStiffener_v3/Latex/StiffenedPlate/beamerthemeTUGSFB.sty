@@ -1,0 +1,300 @@
+% Copyright 2012 by Martin Schanz <m.schanz@tugraz.at>
+%
+% This program can be redistributed and/or modified under the terms
+% of the GNU Public License, version 2.
+
+% fonts
+\usefonttheme{professionalfonts}
+ 
+\mode<presentation>
+
+\definecolor{TUG_rot}{RGB}{247,1,70}
+\definecolor{Mech_blau}{RGB}{0,103,173}
+\definecolor{lite}{HTML}{eeece1} % Text/Hintergrund - hell 2
+\setbeamercolor{TUGLine1}{bg=gray!40}
+\setbeamercolor{frametitle}{parent=palette primary}
+
+%\setbeamertemplate{background canvas}[vertical
+%shading][bottom=white,top=structure.fg!25]
+\RequirePackage{tikz}
+\usetikzlibrary{calc,fit}
+\tikzset{tugtheme/.style={remember picture,overlay,every node/.style={inner sep=0pt,text depth=0pt,anchor=base west,align=left},line width=0pt},
+  copyright/.style={white, inner sep=4pt, font=\Tiny}}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Indentation of TOC
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\defbeamertemplate{section in toc}{TUG theme}
+{\leavevmode\leftskip=4ex%
+  \llap{%
+    \usebeamerfont*{section number projected}%
+    \usebeamercolor[bg]{section number projected}%
+    \vrule width2.25ex height1.85ex depth.4ex%
+    \hskip-2.25ex%
+    \hbox to2.25ex{\hfil\color{fg}\inserttocsectionnumber\hfil}}%
+  \kern1.25ex\inserttocsection\par}
+
+\defbeamertemplate{subsection in toc}{TUG theme}
+{\leavevmode\leftskip=6ex\llap{%
+    \usebeamercolor[bg]{subsection number projected}%
+    \vrule width1ex height1ex\kern1ex}\inserttocsubsection\par}
+
+\setbeamertemplate{itemize/enumerate body begin}{
+  \setlength{\leftmargini}{\tugraz@labelwidth}
+  \setlength{\leftmarginii}{\tugraz@labelwidth}
+  \setlength{\leftmarginiii}{\tugraz@labelwidth}
+}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%  Innertheme with rectangles
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\setbeamertemplate{sections/subsections in toc}[TUG theme]
+\setbeamertemplate{items}[square]
+\setbeamertemplate{blocks}[default]  % eckig
+%\setbeamertemplate{blocks}[rounded][shadow=true]
+%
+%
+\usecolortheme[named=TUG_rot]{structure}
+\setbeamercolor{section in toc}{fg=black,bg=white}
+% Block environment with coloured headline
+\setbeamercolor{block title}{use=structure,fg=white,bg=Mech_blau}%!50!black}
+\setbeamercolor{block title alerted}{use=alerted text,fg=white,bg=alerted
+  text.fg!75!black} 
+\setbeamercolor{block title example}{use=example text,fg=white,bg=example
+  text.fg!75!black} 
+%
+\setbeamercolor{block body}{parent=normal text,use=block title,bg=lite}%block title.bg!10!bg}
+\setbeamercolor{block body alerted}{parent=normal text,use=block title
+  alerted,bg=block title alerted.bg!10!bg}
+\setbeamercolor{block body example}{parent=normal text,use=block title
+  example,bg=block title example.bg!10!bg}
+%
+\setbeamerfont{block title}{size={}}
+\setbeamercovered{transparent}
+%
+%%%% Abmessungen  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\newcommand{\indleft}{7mm}
+\newcommand{\indright}{4mm}
+\setbeamersize{text margin left=\indleft}
+\setbeamersize{text margin right=\indright}
+\newcommand{\tugraz@logosize}{16.5mm}
+\newcommand{\tugraz@logosizesmall}{15mm}
+\newcommand{\tugraz@instheight}{0.5}
+\newcommand{\tugraz@insttrim}{1}
+\newcommand{\tugraz@footheight}{0.505}
+\newcommand{\tugraz@labelwidth}{5mm}
+%%%   HEADER   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\setbeamertemplate{headline}[text line]{
+  \rule{0pt}{18pt}
+  \begin{tikzpicture}[tugtheme]
+    \draw (current page.north west) +(0.85*\indleft, -.7) coordinate (lineleft);
+    \draw (current page.north east) +(-\indright,-.7) coordinate (lineright);
+    \draw[line width=0.5pt] (lineleft) -- (lineright);
+    
+    \draw (current page.north east) ++(-\indright,-.35) node[left] {\tuglogoscaled[\tugraz@logosizesmall]};
+  \end{tikzpicture}
+}
+%%%   FRAMETITLE   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\defbeamertemplate*{frametitle}{TUG theme}
+{
+  \nointerlineskip
+  \usebeamerfont{headline}
+  \begin{beamercolorbox}[wd=.9\paperwidth,ht=2.5ex,leftskip=-2mm,
+    rightskip=\indright  plus1fil]{}%
+    \usebeamerfont*{frametitle}       \insertframetitle
+  \end{beamercolorbox}%
+}
+\addtobeamertemplate{frametitle}{\vskip-3.5mm}{\vskip 1mm} % {space above}{space below}
+%%%   FRAME   NUMBER   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\defbeamertemplate{frame number block}{institute}{
+	\begin{tikzpicture}[tugtheme]
+    \node[anchor=north west,yshift=-2mm] at (current page.north west) {\includegraphics[width=\tugraz@instheight cm,trim=0cm 0cm 0cm \tugraz@insttrim cm,clip]{AMBM}};
+    \draw (current page.north west)  ++(.25,-1.) node[anchor=center,font={\usebeamercolor[white]{page number in head/foot}}] {\insertframenumber /\inserttotalframenumber};
+  \end{tikzpicture}
+}
+\setbeamertemplate{frame number block}[institute]
+%%% FOOTER   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\colorlet{foot}{black!12}
+\setbeamercolor{foot}{fg=black,bg=foot}
+\setbeamertemplate{footline}[text line]{
+  \rule{0pt}{\tugraz@footheight cm}
+  %\usebeamerfont{footline}
+  \usebeamerfont{date in head/foot}
+  \begin{tikzpicture}[tugtheme]
+    \draw[fill, foot] (current page.south west) rectangle +(\paperwidth,\tugraz@footheight);
+    \draw (current page.south west) ++(\indleft,.2)
+    node{\insertshortauthor~$|$~\insertshorttitle};
+  \end{tikzpicture}
+  \usebeamertemplate{frame number block}
+}
+%%% TITLEPAGE   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\defbeamertemplate{title page}{presentation}{
+  \drawtitlepagebackground
+  
+  \begin{tikzpicture}[tugtheme]
+    \draw (current page.west) +(\indleft,0) node[font={\usebeamercolor[fg]{title}\usebeamerfont{title}}] {\parbox[b]{.9\paperwidth}{\inserttitle}};
+
+    \draw (current page.west) +(\indleft,-1) node[font={\usebeamercolor[fg]{author}\usebeamerfont{author}}] {\parbox[b]{.9\paperwidth}{\insertauthor}};
+    \draw (current page.west) +(\indleft,-1.625) node[font={\usebeamercolor[fg]{date}\usebeamerfont{date}}] {\parbox[t]{.9\paperwidth}{\insertdate}};
+    % \draw (current page.south west) +(\indleft,\tugraz@footheight+.3) node[text width=\textwidth,
+    % above right,font=\usebeamerfont{footline}] {\strut\insertlogobar};
+    
+    \node[anchor=north west,yshift=-2mm] at (current page.north west) {\includegraphics[width=\tugraz@instheight cm,trim=0cm 0cm 0cm \tugraz@insttrim cm,clip]{AMBM}};
+
+    \draw (current page.south west) +(\indleft,0.2) node[above
+    right,font=\usebeamerfont{headline}] {\insertinstitute};
+    
+    
+    \draw (current page.south east) +(-\indright,0.2) node[above
+    left,font=\usebeamerfont{headline}] {{\color{TUG_rot} $>$} www.mech.tugraz.at};
+  \end{tikzpicture}
+}
+
+\newcommand{\drawtitlepagebackground}{
+  \begin{tikzpicture}[tugtheme]
+    %\node[anchor=north west] at (current page.north west)
+    %{\includegraphics[width=\paperwidth]{background_4-3}};
+    \node[anchor=north west] at (-7mm,0.) {\includegraphics[width=\paperwidth]{background_4-3}};
+    %\draw (current page.north east) ++(-\indright,-.4) node[anchor=north east] {\tuglogoscaled[\tugraz@logosize]};
+
+    \fill[foot] (current page.south west) rectangle +(\paperwidth,\tugraz@footheight);
+  \end{tikzpicture}%
+}
+\setbeamertemplate{title page}[presentation]
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% compatibility with old style
+\newcommand{\mytitle}{
+  \begin{frame}[t,plain]
+    \maketitle
+  \end{frame}
+}
+
+% % Das macht den navigation Bar weg
+\setbeamertemplate{navigation symbols}{} % Das auf der Titelseite
+\userightsidebartemplate{0cm}{} % Das auf allen anderen Seiten
+
+%%%%%%%%%%%%%%%%%   Logo   %%%%%%%%%%%%%%%%%%%%%%%%%%%
+\newcommand{\tuglogoscaled}[1][12.1mm]{\resizebox{#1}{!}{\tuglogo}}
+%%%   TUGRAZ LOGO   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\newcommand{\tugsq}{\raisebox{0.5ex}{\tikz{\fill (0,0) rectangle (0.5ex,0.5ex);}}}
+
+% integrated logo version {{{
+\setbeamercolor{tuglogo}{fg=black,bg=TUG_rot}
+\newcommand{\tuglogo}{%
+  \begin{tikzpicture}[y=0.80pt, x=0.80pt, yscale=-1.000000, xscale=1.000000, inner sep=0pt, outer sep=0pt]
+  \usebeamercolor{tuglogo}
+  \begin{scope}[cm={{1.25,0.0,0.0,-1.25,(0.0,53.75)}}]
+    \begin{scope}[scale=0.100]
+      \path[fill=bg,nonzero rule] (1.0820,112.0390) -- (208.5310,112.0390) --
+        (208.5310,319.4960) -- (1.0820,319.4960) -- (1.0820,112.0390) -- cycle;
+
+      \path[fill=bg,nonzero rule] (229.2730,112.0390) -- (436.7340,112.0390) --
+        (436.7340,319.4960) -- (229.2730,319.4960) -- (229.2730,112.0390) -- cycle;
+
+      \path[fill=bg,nonzero rule] (457.4880,112.0390) -- (664.9290,112.0390) --
+        (664.9290,319.4960) -- (457.4880,319.4960) -- (457.4880,112.0390) -- cycle;
+
+      \path[fill=bg,nonzero rule] (104.8050,8.3086) -- (312.2740,8.3086) --
+        (312.2740,215.7656) -- (104.8050,215.7656) -- (104.8050,8.3086) -- cycle;
+
+      \path[fill=bg,nonzero rule] (353.7580,215.7660) -- (561.1990,215.7660) --
+        (561.1990,423.2270) -- (353.7580,423.2270) -- (353.7580,215.7660) -- cycle;
+
+      \path[fill=fg,nonzero rule] (752.1170,286.2190) -- (685.7030,286.2190) --
+        (685.7030,319.4140) -- (856.8950,319.4140) -- (856.8950,286.2190) --
+        (790.4840,286.2190) -- (790.4840,112.4770) -- (752.1170,112.4770) --
+        (752.1170,286.2190);
+
+      \path[fill=fg,nonzero rule] (1049.3600,188.5160) .. controls
+        (1049.3600,176.0550) and (1047.1300,164.8050) .. (1042.6400,154.7700) ..
+        controls (1038.1600,144.7340) and (1032.0500,136.2110) .. (1024.3000,129.2070)
+        .. controls (1016.5400,122.1760) and (1007.3900,116.7850) ..
+        (996.7850,112.9960) .. controls (986.1880,109.1880) and (974.6760,107.2930) ..
+        (962.2340,107.2930) .. controls (949.8120,107.2930) and (938.3010,109.1880) ..
+        (927.6910,112.9960) .. controls (917.0900,116.7850) and (907.8590,122.1760) ..
+        (900.0270,129.2070) .. controls (892.1760,136.2110) and (886.0550,144.7340) ..
+        (881.6880,154.7700) .. controls (877.2930,164.8050) and (875.1130,176.0550) ..
+        (875.1130,188.5160) -- (875.1130,319.4140) -- (913.4960,319.4140) --
+        (913.4960,189.8360) .. controls (913.4960,184.7810) and (914.2970,179.4770) ..
+        (915.9380,173.9300) .. controls (917.5660,168.3870) and (920.2700,163.2730) ..
+        (924.0620,158.6020) .. controls (927.8400,153.9340) and (932.8520,150.0900) ..
+        (939.0900,147.0780) .. controls (945.3120,144.0700) and (953.0230,142.5590) ..
+        (962.2340,142.5590) .. controls (971.4340,142.5590) and (979.1560,144.0700) ..
+        (985.3910,147.0780) .. controls (991.6210,150.0900) and (996.6410,153.9340) ..
+        (1000.4200,158.6020) .. controls (1004.2000,163.2730) and (1006.9000,168.3870)
+        .. (1008.5400,173.9300) .. controls (1010.1800,179.4770) and
+        (1011.0000,184.7810) .. (1011.0000,189.8360) -- (1011.0000,319.4140) --
+        (1049.3600,319.4140) -- (1049.3600,188.5160);
+
+      \path[fill=fg,nonzero rule] (833.6480,83.9727) .. controls
+        (826.0430,87.2539) and (816.1880,88.8281) .. (808.3090,88.8281) .. controls
+        (785.3790,88.8281) and (772.7030,74.4023) .. (772.7030,55.6523) .. controls
+        (772.7030,37.0391) and (785.0980,23.0156) .. (806.0550,23.0156) .. controls
+        (811.4020,23.0156) and (815.6450,23.5430) .. (819.0120,24.3242) --
+        (819.0120,48.1836) -- (798.1840,48.1836) -- (798.1840,62.6055) --
+        (837.8710,62.6055) -- (837.8710,13.3086) .. controls (827.4610,10.6914) and
+        (816.6090,8.5938) .. (806.0550,8.5938) .. controls (774.2460,8.5938) and
+        (752.1450,23.4062) .. (752.1450,54.3438) .. controls (752.1450,85.6836) and
+        (772.7030,103.2500) .. (806.0550,103.2500) .. controls (817.4610,103.2500) and
+        (826.4650,101.8050) .. (834.9100,99.4414) -- (833.6480,83.9727);
+
+      \path[fill=fg,nonzero rule] (857.2810,77.6836) -- (874.0430,77.6836) --
+        (874.0430,62.3438) -- (874.3240,62.3438) .. controls (875.1640,68.6406) and
+        (882.8980,79.2578) .. (894.1560,79.2578) .. controls (895.9960,79.2578) and
+        (897.9770,79.2578) .. (899.9300,78.7266) -- (899.9300,61.0234) .. controls
+        (898.2500,61.9414) and (894.8710,62.4688) .. (891.4800,62.4688) .. controls
+        (876.1480,62.4688) and (876.1480,44.6367) .. (876.1480,34.9492) --
+        (876.1480,10.1641) -- (857.2810,10.1641) -- (857.2810,77.6836);
+
+      \path[fill=fg,nonzero rule] (914.8440,74.1406) .. controls
+        (922.1560,77.2930) and (932.0200,79.2578) .. (940.0470,79.2578) .. controls
+        (962.1370,79.2578) and (971.2890,70.7305) .. (971.2890,50.8008) --
+        (971.2890,42.1445) .. controls (971.2890,35.3398) and (971.4340,30.2227) ..
+        (971.5700,25.2422) .. controls (971.7190,20.1250) and (971.9880,15.4062) ..
+        (972.4220,10.1641) -- (955.8090,10.1641) .. controls (955.1050,13.6992) and
+        (955.1050,18.1641) .. (954.9690,20.2617) -- (954.6760,20.2617) .. controls
+        (950.3200,12.7930) and (940.8790,8.5938) .. (932.3050,8.5938) .. controls
+        (919.5000,8.5938) and (906.9610,15.8008) .. (906.9610,28.6484) .. controls
+        (906.9610,38.7383) and (912.1680,44.6367) .. (919.3520,47.9180) .. controls
+        (926.5430,51.1992) and (935.8160,51.8516) .. (943.7110,51.8516) --
+        (954.1210,51.8516) .. controls (954.1210,62.7305) and (948.9140,66.4023) ..
+        (937.7930,66.4023) .. controls (929.7730,66.4023) and (921.7460,63.5234) ..
+        (915.4180,59.0703) -- (914.8440,74.1406) -- cycle(936.9530,21.4336) ..
+        controls (942.7230,21.4336) and (947.2270,23.7969) .. (950.1760,27.4688) ..
+        controls (953.2700,31.2695) and (954.1210,36.1211) .. (954.1210,41.3633) --
+        (945.9570,41.3633) .. controls (937.5200,41.3633) and (924.9880,40.0586) ..
+        (924.9880,29.6953) .. controls (924.9880,23.9336) and (930.1910,21.4336) ..
+        (936.9530,21.4336);
+
+      \path[fill=fg,nonzero rule] (986.7730,77.6836) -- (1044.2000,77.6836) --
+        (1044.2000,63.2617) -- (1008.1500,23.7969) -- (1045.4700,23.7969) --
+        (1045.4700,10.1641) -- (985.2230,10.1641) -- (985.2230,24.4609) --
+        (1021.9500,64.0508) -- (986.7730,64.0508) -- (986.7730,77.6836);
+
+      \path[fill=bg,nonzero rule] (1060.7300,8.3086) -- (1129.8433,8.3086) --
+        (1129.8433,77.4219) -- (1060.7300,77.4219) -- (1060.7300,8.3086) -- cycle;
+    \end{scope}
+  \end{scope}
+  \end{tikzpicture}%
+}
+%%%%%%%%%%%%%%%   Some Table stuff  %%%%%%%%%%%%%%%%%%%%%%%
+\AtEndPreamble{
+  \@ifpackageloaded{tabu}{%
+    \tabulinesep=1mm
+    \newcommand{\tugtabuhead}{%
+      \rowfont{\color{white}}\rowcolor{TUG_rot}
+    }
+    \newcommand{\tugtabu}{%
+      \taburowcolors[1]2{white .. lite}
+      \rowfont{\color{white}}\rowcolor{TUG_rot}
+    }
+    \newcommand{\tugtabulite}{%
+      \taburulecolor{black!24}
+      \taburowcolors[1]2{white .. white}
+      \rowfont{\bfseries}\rowcolor{foot}
+    }
+  }{}
+}
+% recover 'mathcal'
+\DeclareMathAlphabet{\mathcal}{OMS}{cmsy}{m}{n} 
+\mode
+<all>

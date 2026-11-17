@@ -1,0 +1,29 @@
+# Arbeitsumgebung Masterarbeit Bruchmechanik
+#   mamba env create -f environment.yml
+#   conda activate bruchmechanik
+# Versionen entsprechen der getesteten fenicsx-env (17.11.2026).
+name: bruchmechanik
+channels:
+  - conda-forge
+dependencies:
+  - python=3.12
+  - fenics-dolfinx=0.11.0      # ufl.dr (Ridge-Integrale) für die 3D-1D-Kopplung
+  - petsc=3.25.*=real*         # enthält MUMPS, SuperLU_DIST, hypre
+  - petsc4py
+  - mpich
+  - mpi4py
+  - gmsh=4.15
+  - python-gmsh=4.15
+  - numpy
+  - scipy
+  - sympy                      # Herleitungen (Polarisationstensor, Sensitivitäten)
+  - pandas
+  - matplotlib
+  - pyvista                    # Visualisierung im Notebook/Skript
+  - pyyaml                     # cases/*/case.yaml
+  - h5py
+  - pytest
+  - ipykernel
+  - pip
+  - pip:
+      - adios4dolfinx          # Checkpointing von Funktionen (Neustart langer Läufe)

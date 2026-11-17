@@ -1,0 +1,140 @@
+// PARAM -v 0
+load "Element_HCT"
+load "qf11to25" // for tripleQF function
+load "iovtk"
+load "mmg"
+
+bool mmg = true;
+QF2 qfHCT5 = tripleQF(qf5pT);
+cout.precision(10);
+cout.fixed;
+// Parameter
+int maxIterations = 50;
+real stepsizeH = 0.05*25;
+real stepsizeV = 0.05*25;
+int nn = 40;
+real L0 = 40.;
+real H0 = 10.;
+int nV = 2;
+int nH = 2;
+real f = 1e-1;
+real EI = 10;
+real D = 1;
+real[int] widthX(nV+1);
+real[int] widthY(nH+1);
+
+widthX = L0/real(nV+1);
+widthY = H0/real(nH+1);
+
+/* better initial guess
+real a = 0.355;
+widthY = [5-a/2.,a,5-a/2.];
+real b = 12.61;
+widthX = [20.-b/2., b,20.-b/2.];
+*/
+//
+real[int] startX(widthX.n+1); for (int i=1; i<widthX.n+1; i++) startX[i] = startX[i-1] + widthX[i-1];
+real[int] startY(widthY.n+1); for (int i=1; i<widthY.n+1; i++) startY[i] = startY[i-1] + widthY[i-1];
+real[int] xx(maxIterations), yy(maxIterations);
+///////////
+string FILEIME = "L0=" + L0 + "_H0=" + H0 + "_N=" + nn + "_EI=" + EI + "_D=" + D;
+ofstream file(FILEIME+"rez.txt");
+file << "L0 = " << L0 << endl;
+file << "H0 = " << H0 << endl;
+file << "nn = " << nn << endl;
+file << "EI = " << EI << endl;
+file << "D = " << D << endl;
+file << "initial widths = " << widthX << endl;
+file << "initial heights = " << widthY << endl;
+//
+{
+ofstream fout("objectiveplate.txt"); 
+fout << "iteration, objective" << endl;
+}
+///////////
+for (int iteration=0; iteration<maxIterations; iteration++){
+    cout << "iteration: " << iteration << endl;
+    for (int i=0; i<widthX.n; i++){widthX[i] = startX[i+1] - startX[i];}
+    for (int i=0; i<widthY.n; i++){widthY[i] = startY[i+1] - startY[i];}
+    cout << "startX: " << startX << endl;
+    cout << "startY: " << startY << endl;
+    cout << "widthX: " << widthX << endl;
+    cout << "widthY: " << widthY << endl;
+    // Mesh
+    include "generateMesh.edp"
+    // Solve the problem
+    include "solveStiffener.edp"
+    plot(Th,u0);
+    // output to paraview
+    int[int] order = [1];
+    string data = "w";
+    Wh uu = u0;
+    savevtk("results/optPlateStiffener"+string(iteration)+".vtu",ThWithLabels,uu,order=order,dataname=data);
+    // compute the derivative
+    fespace Whdc(ThWithLabels, P2dc);
+    real[int] analyticDerivativeVerticalStiffener(widthX.n-1);
+    for (int i=0;i<widthX.n-1;i++){
+        real s0 = startX[i];
+        real s1 = startX[i+1];
+        real s2 = startX[i+2];
+        func Vx = (((s0-x)^2*(x-s2)^2)/((s0-s1)^2*(s1-s2)^2))*(x>startX[i])*(x<startX[i+2]);
+        func dVx = (-((2*(s0-x)*(s2-x)*(s0+s2-2*x))/((s0-s1)^2*(s1-s2)^2)))*(x>startX[i])*(x<startX[i+2]);
+        func ddVx = (2*(s0^2+4*s0*s2-6*s0*x+s2^2-6*s2*x+6*x^2))/((s0-s1)^2*(s1-s2)^2)*(x>startX[i])*(x<startX[i+2]);
+
+        analyticDerivativeVerticalStiffener[i] = int2d(Th)(2.*f*u0*dVx) + int2d(Th)(D*(3.*dxx(u0)^2-dyy(u0)^2+2.*dxy(u0)^2)*dVx);
+        analyticDerivativeVerticalStiffener[i] += int2d(Th)(2*D*ddVx*dx(u0)*dxx(u0));
+        for (int j=0; j<widthY.n-1; j++){
+            analyticDerivativeVerticalStiffener[i] += int1d(ThWithLabels, 101+j)(3*EI*dxx(u0)^2*dVx+2*EI*dx(u0)*dxx(u0)*ddVx);
+        }
+    }
+/*
+    for (int i=0; i<N+1; i++)
+		vektorD[i] =  int2d(Th,levelset = -1*(x>i)*(x<i+1),qft=qfHCT5) (
+								-3*  DeltaFEM^(-4) * EpsFEM  ^( 1) * Ctensor0[0] * dxx(u) * dxx(u)
+								+ 				     EpsFEM  ^(-3) * Ctensor0[4] * dyy(u) * dyy(u)
+								-1*  DeltaFEM^(-2) * EpsFEM  ^(-1) * Ctensor0[1] * dyy(u) * dxx(u)
+								-1*  DeltaFEM^(-2) * EpsFEM  ^(-1) * Ctensor0[2] * dxx(u) * dyy(u)
+								-1*  DeltaFEM^(-2) * EpsFEM  ^(-1) * Ctensor0[3] * (dxy(u)) * (dxy(u)))
+						+ int1d(Th,levelset= (y-floor(y))+(y==0)+(y==M+1)+(x<i)+(x>i+1) )	(0.5 *(-3) *DeltaFEM^(-4) * EE*II*dxx(u)*dxx(u))
+						+ int1d(Th,levelset=-1* (x>i)*(x<i+1)*(imaStapGore)*(y>=M+1-1e-5))	(0.5 *(-3) *DeltaFEM^(-4) * EE*II*dxx(u)*dxx(u))
+						- 2*int2d (Th,levelset = -1*(x>i)*(x<i+1),qft=qfHCT5)(EpsFEM *g*u);
+*/
+
+    real[int] analyticDerivativeHorizontalStiffener(widthY.n-1);
+    for (int i=0;i<widthY.n-1;i++){
+        real s0 = startY[i];
+        real s1 = startY[i+1];
+        real s2 = startY[i+2];
+        func Vy = (((s0-y)^2*(y-s2)^2)/((s0-s1)^2*(s1-s2)^2))*(y>startY[i])*(y<startY[i+2]);
+        func dVy = (-((2*(s0-y)*(s2-y)*(s0+s2-2*y))/((s0-s1)^2*(s1-s2)^2)))*(y>startY[i])*(y<startY[i+2]);
+        func ddVy = (2*(s0^2+4*s0*s2-6*s0*y+s2^2-6*s2*y+6*y^2))/((s0-s1)^2*(s1-s2)^2)*(y>startY[i])*(y<startY[i+2]);
+
+        analyticDerivativeHorizontalStiffener[i] = int2d(Th)(2.*f*u0*dVy) + int2d(Th)(D*(3.*dyy(u0)^2-dxx(u0)^2+2.*dxy(u0)^2)*dVy);
+        analyticDerivativeHorizontalStiffener[i] += int2d(Th)(2*D*ddVy*dy(u0)*dyy(u0));
+        for (int j=0; j<widthX.n-1; j++){
+            analyticDerivativeHorizontalStiffener[i] += int1d(ThWithLabels, 3+j)(3*EI*dyy(u0)^2*dVy+2*EI*dy(u0)*dyy(u0)*ddVy);
+        }
+    }
+    cout << "analytic derivative vertical: " << analyticDerivativeVerticalStiffener << endl;
+    cout << "analytic derivative horizontal: " << analyticDerivativeHorizontalStiffener << endl;
+    // update the stiffeners
+    for (int i=1; i<startX.n-1; i++) startX[i] -= stepsizeV*analyticDerivativeVerticalStiffener[i-1];
+    for (int i=1; i<startY.n-1; i++) startY[i] -= stepsizeH*analyticDerivativeHorizontalStiffener[i-1];
+
+    // save the objective
+    xx[iteration] = iteration;
+    yy[iteration] = compliance;
+    ofstream fout("objectiveplate.txt",append); fout.precision(14); fout.fixed;
+    fout << iteration << ", " << compliance << endl;
+}
+// save the objective history
+file << "initial compliance: " << yy[0] << endl;
+file << "////////////////////////" << endl;
+file << "final widths: " << widthX << endl;
+file << "final heights: " << widthY << endl;
+file << "final compliance: " << yy[maxIterations-1] << endl;
+
+
+
+
+

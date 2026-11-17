@@ -1,0 +1,196 @@
+// PARAM -v 0
+// =============================================================================
+// runner.edp  --  parametrized, NON-DESTRUCTIVE batch driver for the case matrix
+//
+// Reuses the existing generateMesh.edp + solveStiffener.edp unchanged.
+// All case parameters come in via getARGV so a single file serves every run.
+// Outputs go to runs/<name>_*.txt|dat  (nothing in the original files is touched).
+//
+// Example:
+//   FreeFem++ runner.edp -name refClamped -nV 2 -nH 0 \
+//       -bc0 0 -bc1 0 -bc2 0 -bc3 0 -EI 100 -asym 1 -grid 1 -iters 50
+// =============================================================================
+
+load "Element_HCT"
+load "qf11to25"
+load "iovtk"
+load "mmg"
+include "getARGV.idp"   // provides getARGV(...) for CLI parameters
+
+bool mmg = true;
+QF2 qfHCT5 = tripleQF(qf5pT);
+cout.precision(10);
+cout.fixed;
+
+// ---- Case parameters (CLI) --------------------------------------------------
+string name   = getARGV("-name", "case");   // output prefix
+int    nV     = getARGV("-nV", 2);           // # vertical stiffeners (x=const)
+int    nH     = getARGV("-nH", 0);           // # horizontal stiffeners (y=const)
+real   EI     = getARGV("-EI", 100.);        // beam bending stiffness
+int    bc0    = getARGV("-bc0", 0);          // bottom edge  (0 clamp,1 hinge,2 free)
+int    bc1    = getARGV("-bc1", 0);          // right edge
+int    bc2    = getARGV("-bc2", 0);          // top edge
+int    bc3    = getARGV("-bc3", 0);          // left edge
+int    asym   = getARGV("-asym", 0);         // 1 = asymmetric initial guess (demo)
+int    grid   = getARGV("-grid", 0);         // 1 = dump deflection grid (init+final)
+int    maxIterations = getARGV("-iters", 50);
+
+// ---- Geometry / physics (defaults = concrete slab in MN, m) ------------------
+int  nn  = getARGV("-nn", 40);
+real L0  = getARGV("-L0", 20.);    // slab length  [m]
+real H0  = getARGV("-H0", 10.);    // slab width   [m]
+real c   = 1e15;                   // penalty spring for hinged support
+real f   = getARGV("-f", 0.01);    // area load    [MN/m^2]  (10 kN/m^2)
+real D   = getARGV("-D", 23.);     // plate stiffness [MN m]
+real nu  = getARGV("-nu", 0.2);    // Poisson ratio (concrete)
+real GIt = getARGV("-GIt", 10.);   // beam torsional stiffness [MN m^2]
+real stepmul   = getARGV("-stepmul", 1.0);   // scale the gradient step
+real stepsizeH = 0.005*25*stepmul;
+real stepsizeV = 0.005*25*stepmul;
+// Scale-invariant alternative: if nstep>0, use NORMALIZED steepest descent --
+// each iteration the largest stiffener moves  nstep*decay^k  metres (the step
+// decays so it settles). Independent of the gradient's absolute magnitude, so a
+// single nstep works for any unit scale / stiffness / boundary condition.
+real nstep = getARGV("-nstep", 0.);
+real decay = getARGV("-decay", 0.94);
+real alphaV = stepsizeV, alphaH = stepsizeH;
+real stepfac = 1.0;
+real mingap = 0.02*L0;                          // keep mesh patches non-degenerate
+
+int[int] bcType = [bc0, bc1, bc2, bc3];
+
+// ---- Stiffener initial positions --------------------------------------------
+real[int] widthX(nV+1);
+real[int] widthY(nH+1);
+widthX = L0/real(nV+1);
+widthY = H0/real(nH+1);
+
+real[int] startX(widthX.n+1); for (int i=1; i<widthX.n+1; i++) startX[i] = startX[i-1] + widthX[i-1];
+real[int] startY(widthY.n+1); for (int i=1; i<widthY.n+1; i++) startY[i] = startY[i-1] + widthY[i-1];
+
+// Asymmetric initial guess for the reference demo: shove both x-stiffeners left
+// (L0-relative), so the optimizer must migrate them back to the symmetric optimum.
+if (asym==1 && nV==2){ startX[1] = 0.20*L0;  startX[2] = 0.45*L0; }
+
+real[int] xx(maxIterations), yy(maxIterations);
+
+real[int] startXinit = startX;   // remember the starting layout for the report
+real[int] startYinit = startY;
+
+// ---- Output files -----------------------------------------------------------
+ofstream fobj("runs/"+name+"_obj.txt");
+fobj << "iteration, compliance" << endl;
+
+cout << "==== CASE " << name << "  nV=" << nV << " nH=" << nH
+     << " EI=" << EI << " bc=[" << bc0 << "," << bc1 << "," << bc2 << "," << bc3
+     << "] asym=" << asym << " ====" << endl;
+
+// =============================================================================
+for (int iteration=0; iteration<maxIterations; iteration++){
+    cout << "iteration: " << iteration << endl;
+    for (int i=0; i<widthX.n; i++){widthX[i] = startX[i+1] - startX[i];}
+    for (int i=0; i<widthY.n; i++){widthY[i] = startY[i+1] - startY[i];}
+
+    include "generateMesh.edp"
+    include "solveStiffener.edp"
+
+    // optional deflection grid for color maps (reference case only)
+    if (grid==1 && (iteration==0 || iteration==maxIterations-1)){
+        string tag = (iteration==0) ? "init" : "final";
+        int ngx = 160, ngy = 40;
+        ofstream gf("runs/"+name+"_w_"+tag+".dat");
+        for (int iy=0; iy<=ngy; iy++){
+            for (int ix=0; ix<=ngx; ix++){
+                real xq = L0*ix/real(ngx);
+                real yq = H0*iy/real(ngy);
+                gf << xq << " " << yq << " " << u0(xq,yq) << endl;
+            }
+            gf << endl;   // blank line between scan rows -> pgfplots matrix
+        }
+    }
+
+    // ---- shape derivatives (identical to v3) ---------------------------------
+    real[int] analyticDerivativeVerticalStiffener(widthX.n-1);
+    for (int i=0;i<widthX.n-1;i++){
+        real s0 = startX[i];
+        real s1 = startX[i+1];
+        real s2 = startX[i+2];
+        func Vx  = (((s0-x)^2*(x-s2)^2)/((s0-s1)^2*(s1-s2)^2))*(x>startX[i])*(x<startX[i+2]);
+        func dVx = (-((2*(s0-x)*(s2-x)*(s0+s2-2*x))/((s0-s1)^2*(s1-s2)^2)))*(x>startX[i])*(x<startX[i+2]);
+        func ddVx= (2*(s0^2+4*s0*s2-6*s0*x+s2^2-6*s2*x+6*x^2))/((s0-s1)^2*(s1-s2)^2)*(x>startX[i])*(x<startX[i+2]);
+
+        analyticDerivativeVerticalStiffener[i] = int2d(Th)(2.*f*u0*dVx);
+        analyticDerivativeVerticalStiffener[i] += int2d(Th)(-D*(-2*nu*(2*dVx*dxx(u0)  + ddVx*dx(u0))*(dxx(u0) + dyy(u0)) + 2*(nu - 1)*((2*dVx*dxx(u0)  + ddVx*dx(u0))*dxx(u0) + 2*dVx*dxy(u0)^2)  + (nu*(dxx(u0) + dyy(u0))^2 - (nu - 1)*(dxx(u0)^2 + dyy(u0)^2 + 2*dxy(u0)^2))*dVx));
+        for (int j=0; j<widthY.n-1; j++){
+            analyticDerivativeVerticalStiffener[i] += int1d(ThWithLabels, 101+j)(3*EI*dxx(u0)^2*dVx+2*EI*dx(u0)*dxx(u0)*ddVx);
+            analyticDerivativeVerticalStiffener[i] += int1d(ThWithLabels, 101+j)(GIt*dVx*dxy(u0)^2);
+        }
+        for (int j=0; j<widthX.n-1; j++){
+            analyticDerivativeVerticalStiffener[i] += int1d(ThWithLabels, 3+j)(2.*GIt*dxy(u0)^2*dVx);
+        }
+    }
+
+    real[int] analyticDerivativeHorizontalStiffener(widthY.n-1);
+    for (int i=0;i<widthY.n-1;i++){
+        real s0 = startY[i];
+        real s1 = startY[i+1];
+        real s2 = startY[i+2];
+        func Vy  = (((s0-y)^2*(y-s2)^2)/((s0-s1)^2*(s1-s2)^2))*(y>startY[i])*(y<startY[i+2]);
+        func dVy = (-((2*(s0-y)*(s2-y)*(s0+s2-2*y))/((s0-s1)^2*(s1-s2)^2)))*(y>startY[i])*(y<startY[i+2]);
+        func ddVy= (2*(s0^2+4*s0*s2-6*s0*y+s2^2-6*s2*y+6*y^2))/((s0-s1)^2*(s1-s2)^2)*(y>startY[i])*(y<startY[i+2]);
+
+        analyticDerivativeHorizontalStiffener[i] = int2d(Th)(2.*f*u0*dVy);
+        analyticDerivativeHorizontalStiffener[i] += int2d(Th)(-D*(-2*nu*(2*dVy*dyy(u0)  + ddVy*dy(u0))*(dyy(u0) + dxx(u0)) + 2*(nu - 1)*((2*dVy*dyy(u0)  + ddVy*dy(u0))*dyy(u0) + 2*dVy*dxy(u0)^2)  + (nu*(dyy(u0) + dxx(u0))^2 - (nu - 1)*(dyy(u0)^2 + dxx(u0)^2 + 2*dxy(u0)^2))*dVy));
+        for (int j=0; j<widthX.n-1; j++){
+            analyticDerivativeHorizontalStiffener[i] += int1d(ThWithLabels, 3+j)(3*EI*dyy(u0)^2*dVy+2*EI*dy(u0)*dyy(u0)*ddVy);
+            analyticDerivativeHorizontalStiffener[i] += int1d(ThWithLabels, 3+j)(GIt*dVy*dxy(u0)^2);
+        }
+        for (int j=0; j<widthY.n-1; j++){
+            analyticDerivativeHorizontalStiffener[i] += int1d(ThWithLabels, 101+j)(2.*GIt*dxy(u0)^2*dVy);
+        }
+    }
+
+    // ---- step length: normalized + decaying (scale-invariant) ---------------
+    if (nstep>0){
+        real gmax = 1e-30;
+        for (int i=0;i<analyticDerivativeVerticalStiffener.n;i++)
+            gmax = max(gmax, abs(analyticDerivativeVerticalStiffener[i]));
+        for (int i=0;i<analyticDerivativeHorizontalStiffener.n;i++)
+            gmax = max(gmax, abs(analyticDerivativeHorizontalStiffener[i]));
+        alphaV = nstep*stepfac/gmax; alphaH = alphaV;   // largest move = nstep*stepfac
+        stepfac = stepfac*decay;
+    }
+    // ---- gradient step (outer separators stay fixed) -------------------------
+    for (int i=1; i<startX.n-1; i++) startX[i] -= alphaV*analyticDerivativeVerticalStiffener[i-1];
+    for (int i=1; i<startY.n-1; i++) startY[i] -= alphaH*analyticDerivativeHorizontalStiffener[i-1];
+    // ---- keep stiffeners ordered & inside the plate (no degenerate patches) --
+    for (int i=1; i<startX.n-1; i++) startX[i] = max(startX[i], startX[i-1]+mingap);
+    for (int i=startX.n-2; i>=1; i--) startX[i] = min(startX[i], startX[i+1]-mingap);
+    for (int i=1; i<startY.n-1; i++) startY[i] = max(startY[i], startY[i-1]+mingap);
+    for (int i=startY.n-2; i>=1; i--) startY[i] = min(startY[i], startY[i+1]-mingap);
+
+    xx[iteration] = iteration;
+    yy[iteration] = compliance;
+    fobj.precision(14); fobj.fixed;
+    fobj << iteration << ", " << compliance << endl;
+}
+
+// ---- final layout summary ---------------------------------------------------
+for (int i=0; i<widthX.n; i++){widthX[i] = startX[i+1] - startX[i];}
+for (int i=0; i<widthY.n; i++){widthY[i] = startY[i+1] - startY[i];}
+
+ofstream fpos("runs/"+name+"_pos.txt");
+fpos.precision(10); fpos.fixed;
+fpos << "name "   << name << endl;
+fpos << "nV "     << nV << endl;
+fpos << "nH "     << nH << endl;
+fpos << "EI "     << EI << endl;
+fpos << "bc "     << bc0 << " " << bc1 << " " << bc2 << " " << bc3 << endl;
+fpos << "startXinit"; for (int i=0;i<startXinit.n;i++) fpos << " " << startXinit[i]; fpos << endl;
+fpos << "startYinit"; for (int i=0;i<startYinit.n;i++) fpos << " " << startYinit[i]; fpos << endl;
+fpos << "startX";     for (int i=0;i<startX.n;i++)     fpos << " " << startX[i];     fpos << endl;
+fpos << "startY";     for (int i=0;i<startY.n;i++)     fpos << " " << startY[i];     fpos << endl;
+fpos << "complianceInit  " << yy[0] << endl;
+fpos << "complianceFinal " << yy[maxIterations-1] << endl;
+
+cout << "DONE " << name << " : compliance " << yy[0] << " -> " << yy[maxIterations-1] << endl;
