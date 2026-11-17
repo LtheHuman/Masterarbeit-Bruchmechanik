@@ -4,7 +4,36 @@ Rissbildung über die **topologische Ableitung** (Riss als 3D-Teilvolumen) und
 **Stahlbetonträger** als 3D-Volumenkörper mit 1D-Bewehrung, regularisiert über die
 **Strain-Gradient-Theorie**. Betreuer: Prof. M. Gfrerer (TU Graz, Institut für Baumechanik).
 
-Framework: **FEniCSx (DOLFINx 0.11)** mit PETSc/MUMPS. Die Begründung steht in `CONTEXT.md`.
+Framework: **FEniCSx (DOLFINx 0.11)** mit PETSc/MUMPS. Die Begründung und den aktuellen Stand enthält `CONTEXT.md`.
+
+## Bisherige Ergebnisse
+
+### Griffith-Energie aus der Besprechung (`snippets/04_griffith_energy.py`)
+
+$E(a) = \tfrac12\int_\Omega \sigma:\varepsilon\,dx + G_c\,a - W$ für einen 2D-Einfeldträger mit
+Randriss der Länge $a$ in Feldmitte, für jede Risslänge neu vernetzt und gelöst.
+
+![Griffith-Energie](docs/media/04_griffith_energy.gif)
+
+- Der elastische Energiegewinn skaliert wie $-\Delta\Pi \sim a^2$. FEM und Rissbruchmechanik (LEFM) stimmen
+  bis $a = 9$ cm auf 2–3 % überein.
+- Energiebarriere bei $a^* \approx 12$ cm, $E(a) < E(0)$ ab $a_c \approx 19{,}8$ cm.
+- $\dfrac{E(a)-E(0)}{a^2} = \dfrac{G_c}{a} - C \to +\infty$: Mit einer Dissipation proportional zu $a$
+  entsteht aus dem intakten Zustand kein Riss. Das motiviert den Riss als Volumen.
+
+### Riss als Volumen: topologische Ableitung (`snippets/05_topological_derivative.py`)
+
+Die geschlossene Formel $D_T\Pi = -P_\gamma\,\sigma:\varepsilon$ (Xavier et al., Gl. 3.3–3.4) wird gegen
+eine finite Störung geprüft: kleiner weicher Kreis ($\rho_0 = 10^{-6}$) mit Radius $\varepsilon \to 0$
+in Zug-, Schub- und Druckzone. Danach folgt ein Schritt von Algorithmus 1 mit $\kappa_\delta = G_c/\delta$.
+
+![Topologische Ableitung](docs/media/05_topological_derivative.gif)
+
+- Formel bestätigt: relativer Fehler $\sim\varepsilon^2$, bis 0,2 %. Es gelten die Lamé-Konstanten
+  des ebenen Verzerrungszustands.
+- Nukleation ab $q_c \approx 4{,}9\,q$ unten in Feldmitte (δ = 1 cm). $\omega^\beta$ ist mit $\pi\delta^2/4$ aufgelöst.
+- Offen: Die Druckzone ist fast gleich „attraktiv“ wie die Zugzone (Francfort-Marigo unterscheidet nicht),
+  die Auflagerkanten sind singulär (ausgeblendet), das Maximum liegt am Rand.
 
 ## Ordnerstruktur
 
@@ -15,44 +44,36 @@ environment.yml      conda-Umgebung (einzige Quelle für Versionen)
 organisation/        Besprechungen (Scans + Abschrift), Zeitplan
 literatur/           pdf/ + literature.bib (wird von thesis/ mitbenutzt)
 vorarbeiten/         Masterprojekt (PDF) und codeBaseStiffener (FreeFEM), nur lesen
-theory/              Herleitungen (Markdown/SymPy): Griffith-Energie, top. Ableitung, Strain Gradient
-src/bruchmechanik/   gemeinsamer Python-Code (Formen, Material, Algorithmus, I/O)
+theory/              Herleitungen (Markdown/SymPy)
+src/bruchmechanik/   gemeinsamer Code
+  beam2d.py            2D-Einfeldträger: Netz (gmsh), Lösen, Plot-Hilfen
+  topological_derivative.py   Polarisationstensor und D_T Pi nach Xavier et al.
 meshes/              Gmsh-Generatoren (*.py); erzeugte *.msh werden nicht versioniert
-snippets/            kleine Machbarkeitstests, einzeln lauffähig
-cases/               ein Ordner je Modellproblem: case.yaml + run.py + README.md
+snippets/            Machbarkeitstests und Studien, einzeln lauffähig
+cases/               ein Ordner je Modellproblem
   01_mode1_2d/         Kalibrierung gegen Xavier et al., Abschn. 5.1 (2D, Mode I)
   02_beam_crack_3d/    Riss als 3D-Teilvolumen im Biegebalken
   03_rc_beam_3d1d/     Beton 3D + Bewehrung 1D, Strain Gradient
-tests/               pytest: Regressionssollwerte, FD-Check der topologischen Ableitung
-results/raw/         Rohdaten je Lauf (JSONL), nicht versioniert
-results/curated/     kuratierte CSV, versioniert, Quelle für alle Abbildungen
-results/vtk/         ParaView-Ausgaben, nicht versioniert
-scripts/             curate.py, make_figures.py, make_tables.py → thesis/figures, thesis/tables
-thesis/              LaTeX, versioniert
+tests/               pytest
+results/raw/         Rohdaten und Bilder je Lauf, nicht versioniert
+results/curated/     kuratierte CSV, versioniert
+scripts/             Auswertung; export_readme_media.py kopiert die GIFs nach docs/media/
+docs/media/          Bilder für dieses README (versioniert)
+thesis/              LaTeX
 ```
 
 ## Quickstart
 
 ```bash
-conda activate fenicsx-env          # vorhandene Umgebung, reicht für snippets/
-python snippets/00_check_env.py
-python snippets/01_rebar_3d1d.py
-python snippets/02_strain_gradient.py
-python snippets/03_local_refinement.py
+mamba env create -f environment.yml      # einmalig
+conda activate bruchmechanik
+cd snippets
+python 00_check_env.py                   # Umgebung prüfen
+python 01_rebar_3d1d.py                  # 3D-Beton + 1D-Bewehrung (ufl.dr)
+python 02_strain_gradient.py             # Strain Gradient, C0-Interior-Penalty
+python 03_local_refinement.py            # lokale 3D-Verfeinerung
+python 04_griffith_energy.py             # Griffith-Energie, live
+python 05_topological_derivative.py      # topologische Ableitung, live
+cd .. && python -m pytest tests          # Tests
+python scripts/export_readme_media.py    # README-GIFs nach neuem Lauf aktualisieren
 ```
-
-Komplette Arbeitsumgebung: `mamba env create -f environment.yml && conda activate bruchmechanik`.
-
-## Konventionen (Lehren aus dem Masterprojekt)
-
-- **Git ab Tag 1, auch für `thesis/`.** Keine Ordnerkopien wie `alt/` oder `Version_DATUM/`.
-- **Netze haben genau eine Quelle:** Generatorskripte in `meshes/`. Netze werden erzeugt, nicht kopiert.
-- **Parameter stehen in `cases/*/case.yaml`,** nicht im Code. Jeder Lauf schreibt eine JSON-Zeile
-  (Parameter, Versionen, Zeiten, Ergebnisgrößen) nach `results/raw/`.
-- **Abbildungen und Tabellen werden nur aus `results/curated/` per Skript erzeugt.** Zahlen
-  im Text gegen die kuratierten Daten prüfen.
-- **Jeder neue Term bekommt einen Test:** Regressionssollwert oder Vergleich mit analytischer
-  Lösung. Topologische Ableitungen per Finite-Differenzen-Störung prüfen (wie `checkGradient.edp`).
-- **Linux-Pfade und Umgebungsdatei** statt PowerShell-Befehlen mit absoluten Windows-Pfaden.
-- **Direkte Löser:** MUMPS. UMFPACK läuft über PETSc mit 32-Bit-Indizes und bricht bei
-  ca. 3 GB ab (Masterprojekt, Abschn. 4.4.2). SuperLU nicht verwenden.
