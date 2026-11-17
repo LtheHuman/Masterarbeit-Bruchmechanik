@@ -4,7 +4,8 @@ Rissbildung über die **topologische Ableitung** (Riss als 3D-Teilvolumen) und
 **Stahlbetonträger** als 3D-Volumenkörper mit 1D-Bewehrung, regularisiert über die
 **Strain-Gradient-Theorie**. Betreuer: Prof. M. Gfrerer (TU Graz, Institut für Baumechanik).
 
-Framework: **FEniCSx (DOLFINx 0.11)** mit PETSc/MUMPS. Die Begründung und den aktuellen Stand enthält `CONTEXT.md`.
+Framework: **FEniCSx (DOLFINx 0.11)** mit PETSc/MUMPS. Es war im Benchmark des Masterprojekts das schnellste Framework für
+Elastizität und koppelt 3D-Volumen und 1D-Stäbe nativ über Ridge-Integrale (`ufl.dr`).
 
 ## Bisherige Ergebnisse
 
@@ -39,7 +40,6 @@ in Zug-, Schub- und Druckzone. Danach folgt ein Schritt von Algorithmus 1 mit $\
 
 ```
 README.md            dieses Dokument
-CONTEXT.md           Projektstand zum Wiedereinstieg (laufend aktualisieren)
 environment.yml      conda-Umgebung (einzige Quelle für Versionen)
 organisation/        Besprechungen (Scans + Abschrift), Zeitplan
 literatur/           pdf/ + literature.bib (wird von thesis/ mitbenutzt)
