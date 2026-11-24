@@ -1,0 +1,40 @@
+# Python
+*.egg-info/
+__pycache__/
+*.py[cod]
+.ipynb_checkpoints/
+.pytest_cache/
+.venv/
+
+# Erzeugte Netze und Rechenergebnisse
+*.msh
+*.vtu
+*.pvtu
+*.pvd
+*.vtk
+*.xdmf
+*.h5
+*.bp/
+results/raw/
+results/vtk/
+
+# LaTeX
+*.aux
+*.log
+*.out
+*.toc
+*.synctex.gz
+*.fdb_latexmk
+*.fls
+*.bbl
+*.blg
+*.nav
+*.snm
+
+# Vorarbeiten: große Ergebnisdateien nicht versionieren
+vorarbeiten/codeBaseStiffener/**/results/
+
+# Editor / OS
+.vscode/
+.idea/
+.DS_Store

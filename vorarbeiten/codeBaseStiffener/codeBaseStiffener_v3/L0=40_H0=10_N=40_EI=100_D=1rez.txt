@@ -1,0 +1,19 @@
+L0 = 40
+H0 = 10
+nn = 40
+EI = 100
+D = 1
+nu = 0.4
+bcType (bottom,right,top,left; 0=clamped,1=hinged,2=free) = 4	
+	  2	  0	  0	  0	
+initial widths = 3	
+	13.33333333	13.33333333	13.33333333	
+initial heights = 1	
+	 10	
+initial compliance: 233.947
+////////////////////////
+final widths: 3	
+	13.9428472	12.11412321	13.94302958	
+final heights: 1	
+	 10	
+final compliance: 230.616

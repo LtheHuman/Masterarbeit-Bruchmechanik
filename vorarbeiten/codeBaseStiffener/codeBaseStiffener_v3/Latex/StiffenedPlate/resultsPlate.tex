@@ -1,0 +1,274 @@
+% =============================================================================
+%  Results frames -- REAL UNITS (concrete slab).  Data: ./data (copy_data.sh)
+%  Compliance C in kJ, deflection w in mm.
+%  Uniform layout: big figure (left) + Setup / Findings (right).
+% =============================================================================
+
+% compact top-view deflection map: #1=width #2=file #3=title #4=meta max [mm]
+\newcommand{\cmap}[4]{%
+  \begin{tikzpicture}
+    \begin{axis}[title={#3},width=#1,view={0}{90},axis equal image,
+        enlargelimits=false,axis line style={draw=none},xtick=\empty,ytick=\empty,
+        point meta min=0,point meta max=#4,colormap/viridis,
+        title style={font=\scriptsize,yshift=-1.5mm}]
+      \addplot3[surf,shader=interp,mesh/ordering=x varies] table {#2};
+    \end{axis}
+  \end{tikzpicture}}
+
+% -----------------------------------------------------------------------------
+\begin{frame}{Parametric study: a real reinforced-concrete slab}
+  \begin{columns}[t]
+    \begin{column}{0.54\textwidth}
+      \textbf{Slab \& material}
+      \begin{itemize}\small
+        \item $20\times10$\,m, thickness $h=0.2$\,m
+        \item concrete $E\approx33$\,GPa, $\nu=0.2$
+        \item $D=\dfrac{E h^3}{12(1-\nu^2)}\approx \highlight{23}$\,MN\,m
+        \item load $g{+}q\approx10$\,kN/m$^2$ $\Rightarrow f=0.01$\,MN/m$^2$
+      \end{itemize}
+    \end{column}
+    \begin{column}{0.46\textwidth}
+      \textbf{Stiffeners} (down-stand beams)
+      \begin{itemize}\small
+        \item $30\times50$\,cm: $EI\approx \highlight{103}$\,MN\,m$^2$
+        \item $30\times100$\,cm: $EI\approx \highlight{825}$\,MN\,m$^2$ \;($8\times$)
+        \item torsion $GI_t = 0.1\,EI$ (cracked, representative)
+      \end{itemize}
+      \vspace{1mm}
+      \textbf{Conventions}
+      \begin{itemize}\small
+        \item supports: simply supported (base) \& clamped
+        \item $C$ in kJ, $w$ in mm
+        \item rib position $x$ measured from the left edge ($x{=}0$)
+              along the $20$\,m span, $x\in(0,20)$\,m
+      \end{itemize}
+    \end{column}
+  \end{columns}
+  \vspace{1mm}
+  {\footnotesize Realistically $EI/D\approx 4$--$36$, so rib \emph{placement} is a
+  fine adjustment while \highlight{section} and \highlight{support} dominate.}
+\end{frame}
+
+% --- reference: convergence --------------------------------------------------
+\begin{frame}{Reference case -- convergence}
+  \begin{columns}[c]
+    \begin{column}{0.58\textwidth}
+      \centering
+      \begin{tikzpicture}
+        \begin{axis}[width=7.2cm,height=5.2cm,
+            xlabel={iteration},ylabel={compliance $C$ [kJ]},
+            xmin=0,xmax=80,ymin=26.4,ymax=29,
+            tick label style={font=\scriptsize},label style={font=\small},
+            grid=major,grid style={gray!20}]
+          \addplot[dpBlue,very thick] table[col sep=comma,skip first n=1,
+              x index=0,y index=1]{data/ref_obj.txt};
+        \end{axis}
+      \end{tikzpicture}
+    \end{column}
+    \begin{column}{0.42\textwidth}
+      \textbf{Setup}
+      \begin{itemize}\footnotesize
+        \item simply supported, $30\times50$, $n_V=2$
+        \item off-centred start $x=4,\,9$\,m
+      \end{itemize}
+      \textbf{Findings}
+      \begin{itemize}\footnotesize
+        \item ribs migrate to $x=\highlight{8.5,\,11.5}$\,m
+        \item $C:\ 28.8\to\highlight{26.7}$\,kJ \;($-7.5\%$)
+        \item smooth, monotone descent
+      \end{itemize}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+% --- reference: deflection before / after ------------------------------------
+\begin{frame}{Reference case -- deflection before / after}
+  \begin{columns}[c]
+    \begin{column}{0.6\textwidth}
+      \centering
+      \cmap{6.0cm}{data/ref_w_init.dat}{start $x=4,9$ \;($w_{\max}=33.2$\,mm)}{34}\\[1mm]
+      \cmap{6.0cm}{data/ref_w_final.dat}{optimized $x=8.5,11.5$ \;($w_{\max}=27.5$\,mm)}{34}\\[0.5mm]
+      {\tiny colour: deflection $0\dots34$\,mm (viridis), slab to scale}
+    \end{column}
+    \begin{column}{0.4\textwidth}
+      \textbf{Setup}
+      \begin{itemize}\footnotesize
+        \item simply supported, $30\times50$, $n_V=2$
+      \end{itemize}
+      \textbf{Findings}
+      \begin{itemize}\footnotesize
+        \item ribs cluster toward mid-span, where a simply supported slab
+              deflects most
+        \item peak deflection $33.2\to\highlight{27.5}$\,mm \;($-17\%$)
+      \end{itemize}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+% --- boundary conditions -----------------------------------------------------
+\begin{frame}{Effect of the boundary conditions}
+  \begin{columns}[c]
+    \begin{column}{0.56\textwidth}
+      \centering
+      \cmap{4.0cm}{data/bcClamped_w_final.dat}{clamped \;($C=5.0$, $w_{\max}=6.3$)}{28}\\[0.5mm]
+      \cmap{4.0cm}{data/bcOneway_w_final.dat}{one-way \;($C=8.9$, $w_{\max}=10.6$)}{28}\\[0.5mm]
+      \cmap{4.0cm}{data/bcHinged_w_final.dat}{simply supp. \;($C=26.7$, $w_{\max}=27.5$)}{28}\\[0.5mm]
+      {\tiny colour: deflection $0\dots28$\,mm}
+    \end{column}
+    \begin{column}{0.44\textwidth}
+      \textbf{Setup}
+      \begin{itemize}\footnotesize
+        \item same slab, $30\times50$, $n_V=2$
+        \item three support types
+      \end{itemize}
+      \textbf{Findings}
+      \begin{itemize}\footnotesize
+        \item support \highlight{dominates}: simply supported $\sim5\times$
+              more compliant than clamped
+        \item optimal rib positions $x$\,[m] are support-dependent
+              (even start $6.7/13.3$):
+              \begin{itemize}\footnotesize
+                \item clamped $\to \highlight{7.6/12.4}$
+                \item one-way $\to \highlight{5.0/15.0}$ \emph{(spread)}
+                \item simply supp.\ $\to \highlight{8.5/11.5}$ \emph{(clustered)}
+              \end{itemize}
+      \end{itemize}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+% --- number of stiffeners ----------------------------------------------------
+\begin{frame}{Effect of the number of stiffeners}
+  \begin{columns}[c]
+    \begin{column}{0.56\textwidth}
+      \centering
+      \begin{tikzpicture}
+        \begin{axis}[ybar,width=6.6cm,height=5.2cm,
+            ylabel={compliance $C$ [kJ]},xlabel={vertical stiffeners},
+            symbolic x coords={0,1,2,3,grid},xtick=data,
+            nodes near coords,nodes near coords style={font=\scriptsize},
+            ymin=0,ymax=44,bar width=12pt,
+            tick label style={font=\scriptsize},label style={font=\small}]
+          \addplot[fill=dpBlue] coordinates
+            {(0,38.3)(1,31.1)(2,26.7)(3,23.5)(grid,25.5)};
+        \end{axis}
+      \end{tikzpicture}\\[-0.5mm]
+      {\tiny ``grid'' $=2$ vertical $+\,1$ horizontal stiffener}
+    \end{column}
+    \begin{column}{0.44\textwidth}
+      \textbf{Setup}
+      \begin{itemize}\footnotesize
+        \item simply supported slab, $30\times50$ ribs
+      \end{itemize}
+      \textbf{Findings}
+      \begin{itemize}\footnotesize
+        \item each rib helps with \highlight{diminishing return}
+              ($38\to23$\,kJ for $0\to3$)
+        \item $3$ \emph{parallel} ribs beat the $2{+}1$ grid: the slab spans
+              the short side, so ribs across it carry more
+      \end{itemize}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+% --- cross-section -----------------------------------------------------------
+\begin{frame}{Effect of the stiffener cross-section}
+  \begin{columns}[c]
+    \begin{column}{0.6\textwidth}
+      \centering
+      \cmap{6.0cm}{data/bcHinged_w_final.dat}{$30\times50$\,cm \;($C=26.7$, $w_{\max}=27.5$)}{28}\\[1mm]
+      \cmap{6.0cm}{data/cs825_w_final.dat}{$30\times100$\,cm \;($C=10.3$, $w_{\max}=10.0$)}{28}\\[0.5mm]
+      {\tiny colour: deflection $0\dots28$\,mm}
+    \end{column}
+    \begin{column}{0.4\textwidth}
+      \textbf{Setup}
+      \begin{itemize}\footnotesize
+        \item simply supported, $n_V=2$
+      \end{itemize}
+      \textbf{Findings}
+      \begin{itemize}\footnotesize
+        \item doubling the depth raises $EI$ \highlight{$8\times$} ($103\to825$)
+        \item compliance \highlight{more than halves} ($26.7\to10.3$\,kJ)
+        \item optimum shifts toward even-thirds, $x$\,[m]:
+              \begin{itemize}\footnotesize
+                \item $30\times50 \to \highlight{8.5/11.5}$ (clustered)
+                \item $30\times100 \to \highlight{6.9/13.1}$ ($\approx 6.7/13.3$)
+              \end{itemize}
+      \end{itemize}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+% --- torsion -----------------------------------------------------------------
+\begin{frame}{Effect of stiffener torsion}
+  \begin{columns}[c]
+    \begin{column}{0.54\textwidth}
+      \centering
+      \renewcommand{\arraystretch}{1.3}
+      \begin{tabular}{@{}lccc@{}}
+        \toprule
+        $30\times100$ rib & $GI_t$ & $C$ [kJ] & $w_{\max}$ [mm]\\
+        \midrule
+        with torsion    & $82.5$ & $10.3202$ & $10.00$\\
+        without torsion & $0$    & $10.3202$ & $10.00$\\
+        \midrule
+        difference      & --     & $<0.01\%$ & $<0.01\%$\\
+        \bottomrule
+      \end{tabular}
+    \end{column}
+    \begin{column}{0.46\textwidth}
+      \textbf{Setup}
+      \begin{itemize}\footnotesize
+        \item $30\times100$, simply supported, $n_V=2$
+      \end{itemize}
+      \textbf{Findings}
+      \begin{itemize}\footnotesize
+        \item torsion changes compliance by \highlight{$<0.1\%$} --
+              negligible here
+        \item it engages only where the plate \emph{twists} along the rib
+              (asymmetric load, skew, corners)
+        \item including it keeps the model general
+      \end{itemize}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+% --- discussion --------------------------------------------------------------
+\begin{frame}{Discussion}
+  \begin{itemize}
+    \item \textbf{Section and support dominate.} $C$ ranges $5$ (clamped) to
+          $27$\,kJ (simply supported) and halves again with a deeper beam
+          ($27\to10$\,kJ); rib \emph{position} is a few-percent fine-tuning.
+    \item \textbf{Optimal position is support-dependent.} Simply supported
+          $\Rightarrow$ ribs \highlight{cluster} at mid-span; one-way
+          $\Rightarrow$ they \highlight{spread}; stiffer ribs move toward equal
+          sub-spans.
+    \item \textbf{Arrangement matters.} For this $2{:}1$ slab three parallel ribs
+          beat a $2{+}1$ grid -- orient ribs along the span.
+    \item \textbf{Torsion is negligible} for straight ribs under symmetric load
+          ($<0.1\%$).
+    \item \textbf{Numerics.} A normalized, decaying gradient step converges
+          monotonically across all scales, stiffnesses and supports.
+  \end{itemize}
+\end{frame}
+
+% --- conclusion --------------------------------------------------------------
+\begin{frame}{Conclusion and outlook}
+  \textbf{What was done}
+  \begin{itemize}
+    \item Kirchhoff plate (with $\nu$) $+$ beam stiffeners (\highlight{bending and
+          torsion}) on lines, $C^1$ HCT elements in FreeFEM.
+    \item Per-edge boundary conditions: clamped / simply supported / free.
+    \item Rib placement by gradient descent with \highlight{analytic} shape
+          derivatives, applied to a real $20\times10$\,m concrete slab.
+  \end{itemize}
+  \medskip
+  \textbf{Outlook}
+  \begin{itemize}
+    \item Validation against \highlight{Abaqus} (one analysis case).
+    \item Eccentric stiffeners; optimise \emph{number} and \emph{cross-section}.
+    \item Stress / buckling constraints; free-vibration objective.
+  \end{itemize}
+  \vfill
+  \centering{\small\highlight{Thank you!}}
+\end{frame}

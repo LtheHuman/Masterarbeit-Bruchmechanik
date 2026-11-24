@@ -1,0 +1,27 @@
+# mamba env create -f environment.yml
+name: bruchmechanik
+channels:
+  - conda-forge
+dependencies:
+  - python=3.12
+  - fenics-dolfinx=0.11.0
+  - petsc=3.25.*=real*
+  - petsc4py
+  - mpich
+  - mpi4py
+  - gmsh=4.15
+  - python-gmsh=4.15
+  - numpy
+  - scipy
+  - sympy
+  - pandas
+  - matplotlib
+  - pillow
+  - pyvista
+  - pyyaml
+  - h5py
+  - pytest
+  - ipykernel
+  - pip
+  - pip:
+      - -e .

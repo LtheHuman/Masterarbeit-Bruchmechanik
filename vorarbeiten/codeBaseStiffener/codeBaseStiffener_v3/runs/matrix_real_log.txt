@@ -1,0 +1,151 @@
+==== ref ====
+  196 : cout << "DONE " << name << " : compliance " << yy[0] << " -> " << yy[maxIterations-1] << endl;
+DONE ref : compliance 0.0288162260 -> 0.0266528118
+==== bcClamped ====
+  196 : cout << "DONE " << name << " : compliance " << yy[0] << " -> " << yy[maxIterations-1] << endl;
+DONE bcClamped : compliance 0.0051130671 -> 0.0050164161
+==== bcOneway ====
+  196 : cout << "DONE " << name << " : compliance " << yy[0] << " -> " << yy[maxIterations-1] << endl;
+DONE bcOneway : compliance 0.0089994840 -> 0.0089134147
+==== bcHinged ====
+  196 : cout << "DONE " << name << " : compliance " << yy[0] << " -> " << yy[maxIterations-1] << endl;
+DONE bcHinged : compliance 0.0274307871 -> 0.0266528105
+==== n0 ====
+  196 : cout << "DONE " << name << " : compliance " << yy[0] << " -> " << yy[maxIterations-1] << endl;
+DONE n0 : compliance 0.0382966013 -> 0.0382966013
+==== n1 ====
+  196 : cout << "DONE " << name << " : compliance " << yy[0] << " -> " << yy[maxIterations-1] << endl;
+DONE n1 : compliance 0.0311251946 -> 0.0311252082
+==== n3 ====
+  196 : cout << "DONE " << name << " : compliance " << yy[0] << " -> " << yy[maxIterations-1] << endl;
+DONE n3 : compliance 0.0248344061 -> 0.0234772403
+==== n2h1 ====
+  196 : cout << "DONE " << name << " : compliance " << yy[0] << " -> " << yy[maxIterations-1] << endl;
+DONE n2h1 : compliance 0.0265374506 -> 0.0255176062
+==== cs825 ====
+  196 : cout << "DONE " << name << " : compliance " << yy[0] << " -> " << yy[maxIterations-1] << endl;
+DONE cs825 : compliance 0.0103471525 -> 0.0103201911
+==== torOff ====
+  196 : cout << "DONE " << name << " : compliance " << yy[0] << " -> " << yy[maxIterations-1] << endl;
+DONE torOff : compliance 0.0103503344 -> 0.0103202031
+==== ALL DONE ====
+---- ref ----
+name ref
+nV 2
+nH 0
+EI 100.0000000000
+bc 1 1 1 1
+startXinit 0.0000000000 4.0000000000 9.0000000000 20.0000000000
+startYinit 0.0000000000 10.0000000000
+startX 0.0000000000 8.5031538704 11.4959527676 20.0000000000
+startY 0.0000000000 10.0000000000
+complianceInit  0.0288162260
+complianceFinal 0.0266528118
+---- bcClamped ----
+name bcClamped
+nV 2
+nH 0
+EI 100.0000000000
+bc 0 0 0 0
+startXinit 0.0000000000 6.6666666667 13.3333333333 20.0000000000
+startYinit 0.0000000000 10.0000000000
+startX 0.0000000000 7.5965646770 12.4036934233 20.0000000000
+startY 0.0000000000 10.0000000000
+complianceInit  0.0051130671
+complianceFinal 0.0050164161
+---- bcOneway ----
+name bcOneway
+nV 2
+nH 0
+EI 100.0000000000
+bc 0 2 0 2
+startXinit 0.0000000000 6.6666666667 13.3333333333 20.0000000000
+startYinit 0.0000000000 10.0000000000
+startX 0.0000000000 5.0340815135 14.9643014667 20.0000000000
+startY 0.0000000000 10.0000000000
+complianceInit  0.0089994840
+complianceFinal 0.0089134147
+---- bcHinged ----
+name bcHinged
+nV 2
+nH 0
+EI 100.0000000000
+bc 1 1 1 1
+startXinit 0.0000000000 6.6666666667 13.3333333333 20.0000000000
+startYinit 0.0000000000 10.0000000000
+startX 0.0000000000 8.5130761562 11.4935333938 20.0000000000
+startY 0.0000000000 10.0000000000
+complianceInit  0.0274307871
+complianceFinal 0.0266528105
+---- n0 ----
+name n0
+nV 0
+nH 0
+EI 100.0000000000
+bc 1 1 1 1
+startXinit 0.0000000000 20.0000000000
+startYinit 0.0000000000 10.0000000000
+startX 0.0000000000 20.0000000000
+startY 0.0000000000 10.0000000000
+complianceInit  0.0382966013
+complianceFinal 0.0382966013
+---- n1 ----
+name n1
+nV 1
+nH 0
+EI 100.0000000000
+bc 1 1 1 1
+startXinit 0.0000000000 10.0000000000 20.0000000000
+startYinit 0.0000000000 10.0000000000
+startX 0.0000000000 9.9999386759 20.0000000000
+startY 0.0000000000 10.0000000000
+complianceInit  0.0311251946
+complianceFinal 0.0311252082
+---- n3 ----
+name n3
+nV 3
+nH 0
+EI 100.0000000000
+bc 1 1 1 1
+startXinit 0.0000000000 5.0000000000 10.0000000000 15.0000000000 20.0000000000
+startYinit 0.0000000000 10.0000000000
+startX 0.0000000000 7.5788230349 10.0000530319 12.4208309758 20.0000000000
+startY 0.0000000000 10.0000000000
+complianceInit  0.0248344061
+complianceFinal 0.0234772403
+---- n2h1 ----
+name n2h1
+nV 2
+nH 1
+EI 100.0000000000
+bc 1 1 1 1
+startXinit 0.0000000000 6.6666666667 13.3333333333 20.0000000000
+startYinit 0.0000000000 5.0000000000 10.0000000000
+startX 0.0000000000 9.0314036049 10.9834508981 20.0000000000
+startY 0.0000000000 4.9999618022 10.0000000000
+complianceInit  0.0265374506
+complianceFinal 0.0255176062
+---- cs825 ----
+name cs825
+nV 2
+nH 0
+EI 825.0000000000
+bc 1 1 1 1
+startXinit 0.0000000000 6.6666666667 13.3333333333 20.0000000000
+startYinit 0.0000000000 10.0000000000
+startX 0.0000000000 6.8640439003 13.1358908543 20.0000000000
+startY 0.0000000000 10.0000000000
+complianceInit  0.0103471525
+complianceFinal 0.0103201911
+---- torOff ----
+name torOff
+nV 2
+nH 0
+EI 825.0000000000
+bc 1 1 1 1
+startXinit 0.0000000000 6.6666666667 13.3333333333 20.0000000000
+startYinit 0.0000000000 10.0000000000
+startX 0.0000000000 6.8563467380 13.1435890791 20.0000000000
+startY 0.0000000000 10.0000000000
+complianceInit  0.0103503344
+complianceFinal 0.0103202031

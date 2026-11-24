@@ -1,0 +1,42 @@
+
+
+mesh Th;                                  // leeres Netz, wird patchweise aufsummiert
+int[int] ll = [1,1,1,1];                  // Randlabels eines Patches [unten,rechts,oben,links]
+int count = 0;                            // laufende Regionsnummer
+int[int,int] patchToRegions(widthX.n,widthY.n);  // Patch (i,j) -> Regionsnummer
+
+// Doppelschleife ueber alle Patches: i = Spalte (x), j = Zeile (y)
+for (int i=0; i<widthX.n; i++){
+    for(int j=0; j<widthY.n; j++){
+        // Label je Patchkante: liegt die Kante auf dem Plattenrand -> 1,
+        // sonst ist sie eine innere Steifenlinie -> eindeutige Nummer
+        // (vertikal: i+2/i+3, horizontal: 101+j/102+j)
+        ll = [((j==0) ? 1 : 102+j),((i==widthX.n-1) ? 1 : i+3),((j==widthY.n-1) ? 1 : 101+j),((i==0) ? 1 : i+2)];
+        // Rechteck-Patch [startX[i],startX[i]+widthX[i]] x [startY[j],startY[j]+widthY[j]]
+        // mit nn x nn Elementen erzeugen und ans Gesamtnetz "addieren" (verkleben)
+        Th = Th + square(nn,nn,[startX[i] + widthX[i]*x,startY[j] + widthY[j]*y],label=ll,region=count, flags=1);
+        patchToRegions(i,j) = count;
+        count = count + 1;
+    }
+}
+
+// Kopie mit Original-Labels sichern, BEVOR umetikettiert wird
+mesh ThWithLabels = Th;
+
+// Schritt 1: alle inneren Steifenlinien (Label>1) -> 2, Aussenrand bleibt 1
+Th = change(Th, flabel=(label==1)+2*(label>1));
+
+// Schritt 2: Aussenrand nach Kante aufteilen: 11=unten, 12=rechts, 13=oben, 14=links.
+// Die Bedingungen sind geometrisch (Kanten-Schwerpunkt) und gegenseitig
+// ausschliessend (Prioritaet: unten > rechts > oben > links), damit jede
+// Randkante genau ein Label bekommt.
+Th = change(Th, flabel = 2*(label==2) + (label==1)*(
+      11*(y<1e-8)
+    + 12*(y>=1e-8)*(x>L0-1e-8)
+    + 13*(y>=1e-8)*(x<=L0-1e-8)*(y>H0-1e-8)
+    + 14*(y>=1e-8)*(x<=L0-1e-8)*(y<=H0-1e-8)*(x<1e-8)));
+
+// Optional: Netz mit mmg2d glaetten/vergleichmaessigen (max. Kantenlaenge hmax).
+// Die Labels 2 und 11..14 bleiben dabei erhalten.
+if (mmg) Th = mmg2d(Th,hmax=0.3125);
+//plot(Th,wait=1);

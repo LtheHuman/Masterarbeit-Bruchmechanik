@@ -1,0 +1,125 @@
+\documentclass[10pt
+ ,aspectratio=1610
+]{beamer}	%% 16:10 ratio
+% ==================================================================
+%% load settings
+
+\usepackage{xcolor}
+\usepackage{eurosym}
+\usepackage{comment}
+\newcommand\cropped[1]{%
+	\immediate\write18{convert -trim #1.png #1cropped.png}%
+	\includegraphics[width=0.8\linewidth]{#1cropped.png}}
+% ==================================================================
+%% set up title page data
+\title[] {Optimierungsmethoden \\[1mm] für nachhaltige Baukonstruktionen \\[1.5mm] Homework assignments }
+
+%\subtitle{Einführung}
+
+\author[M.~Gfrerer,  A.~Borkovic] % (optional)
+{Michael Gfrerer, Aleksandar Borkovic}
+
+\date % (optional)
+{24. März 2026}
+% ==================================================================
+%++++++++++++++++++++
+% the document
+%++++++++++++++++++++
+%
+\begin{document}
+
+%To start with page number 1 after titleframe
+\addtocounter{framenumber}{-1}
+\mytitle  % Dieser Befehl anstatt \maketitle ist wichtig, da sonst
+          % % nicht das Hintergrundbild gesetzt wird
+% ==================================================================
+%{\frame{\frametitle{Inhalt}
+%    \tableofcontents}}
+%\input{content/einfuehrung}
+% ---------------------------------------------------------------------------
+% ---------------------------------------------------------------------------
+\begin{comment}
+\begin{frame}[c]
+	\frametitle{Exercises}
+	\begin{enumerate}
+		\item Optimization of frames
+		\item Size optimization of trusses
+		\item Optimization of building insulation
+		\item Size optimization of networks
+		\item Worst case loading
+		\begin{itemize}
+			\item Truss
+			\item FEM for plane structures
+			\item analytic methods for frames
+            \item two-span beam
+		\end{itemize}
+        \begin{itemize}
+            \item dead and live loads
+        \end{itemize}
+		%\item Optimization of retainment walls
+	\end{enumerate}
+	
+\end{frame}  
+\end{comment}
+% ---------------------------------------------------------------------------
+
+% ---------------------------------------------------------------------------
+
+% ==================================================================
+
+
+% ==================================================================
+
+
+% ==================================================================
+
+
+% ==================================================================
+
+% 
+
+\begin{frame}[c]
+\frametitle{Topic: FEM}
+Title: Optimize the position of stiffeners of a plate
+\vfill
+Tasks:
+\begin{itemize}
+    \item Learn about the bending of thin plates
+    \item Recall the beam bending theory
+    \item Learn about approximating a stiffened plate as a bending plate with carefully added stiffness of beams
+    \item Introduce yourself to the basics of shape optimization
+    \item Introduce yourself to the basics of FreeFEM 
+    \item Make yoursef familiar with the given code
+    %\item Possible improvement: Enhance the code so that it can address a free vibration problem, and define the lowest eigenfrequency as the objective function 
+  %  \item Decision variables are positions of stiffeners. 
+
+\end{itemize}
+
+In the current code, compliance (external work) due to a uniformly distributed load is defined as an objective function.
+
+\end{frame}
+
+\begin{frame}[c]
+
+Deliverables:
+\begin{itemize}
+
+    \item Define the analysis cases: for example, consider cases with different numbers of stiffeners and different types of boundary conditions
+    \item Run parametric analysis, vary input parameters
+    \item Compare one analysis case with the results in Abaqus
+    \item Present and discuss obtained results
+\end{itemize}
+
+Decision variables are the positions of stiffeners. The plate is rectangular. Adopt material data.
+\vfill
+
+\end{frame}
+% ==================================================================
+
+
+% ==================================================================
+% {\frame{\frametitle{Inhalt}\tableofcontents}}
+%\titleframe
+
+\end{document}
+% ==================================================================
